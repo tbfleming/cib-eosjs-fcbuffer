@@ -279,7 +279,7 @@ const time = (validation) => {
       return Math.floor(new Date(value).getTime() / 1000)
     },
     toObject (value) {
-      if (validation.defaults && value == null) { return (new Date(0)).toISOString().split('.')[0] + 'Z' }
+      if (validation.defaults && value == null) { return (new Date(0)).toISOString().split('.')[0] }
 
       validate(value, validation)
 
@@ -295,7 +295,7 @@ const time = (validation) => {
 
       noOverflow(value, spread(validation, {bits: 32}))
       const int = parseInt(value)
-      return (new Date(int * 1000)).toISOString().split('.')[0] + 'Z'
+      return (new Date(int * 1000)).toISOString().split('.')[0]
     }
   }
   return _time

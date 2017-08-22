@@ -65,8 +65,8 @@ describe('API', function () {
     type.fromObject(1000)
     type.fromObject('1970-01-01T00:00:00')
 
-    assertSerializer(type, '1970-01-01T00:00:00Z')
-    assertSerializer(type, '2106-02-07T06:28:15Z')
+    assertSerializer(type, '1970-01-01T00:00:00')
+    assertSerializer(type, '2106-02-07T06:28:15')
     throws(() => assertSerializer(type, '1969-12-31T23:59:59Z'), /Overflow/)
     throws(() => assertSerializer(type, '2106-02-07T06:28:16Z'), /Overflow/)
     assertRequired(type)
