@@ -1,4 +1,5 @@
 const BN = require('bn.js')
+const {Long} = require('bytebuffer')
 
 const types = {
   Bytes: () => [bytebuf],
@@ -164,28 +165,31 @@ const intbufType = ({signed = false, bits}) =>
 
 const intbuf = (validation) => ({
   fromByteBuffer (b) {
-    return b[`read${intbufType(validation)}`]()
+    const value = b[`read${intbufType(validation)}`]()
+    return Long.isLong(value) ? value.toString() : value
   },
   appendByteBuffer (b, value) {
     // noOverflow(value, validation)
+    // value = typeof value === 'string' ? Long.fromString(value) : value
     b[`write${intbufType(validation)}`](value)
   },
   fromObject (value) {
+    noOverflow(value, validation)
     // if(validation.bits > 53 && typeof value === 'number')
     //     value = String(value)
 
-    noOverflow(value, validation)
     return value
   },
   toObject (value) {
     if (validation.defaults && value == null) {
       return validation.bits > 53 ? '0' : 0
     }
+
+    noOverflow(value, validation)
     // if(validation.bits > 53 && typeof value === 'number')
     //     value = String(value)
 
-    noOverflow(value, validation)
-    return value.toString ? value.toString() : value
+    return Long.isLong(value) ? value.toString() : value
   }
 })
 
