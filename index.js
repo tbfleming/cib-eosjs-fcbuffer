@@ -35,19 +35,20 @@ module.exports = (definitions, config = {}) => {
 
   const types = Types(config)
   const {errors, structs} = create(definitions, types)
-  const extend = (parent, child) => {
-    const combined = Object.assign(parent, child)
-    const {structs, errors} = create(combined, types)
-    return {
-      errors,
-      structs,
-      extend: child => extend(combined, child)
-    }
-  }
+  // const extend = (parent, child) => {
+  //   const combined = Object.assign(parent, child)
+  //   const {structs, errors} = create(combined, types)
+  //   return {
+  //     errors,
+  //     structs,
+  //     extend: child => extend(combined, child)
+  //   }
+  // }
   return {
     errors,
     structs,
-    extend: child => extend(definitions, child)
+    types
+    // extend: child => extend(definitions, child)
   }
 }
 
