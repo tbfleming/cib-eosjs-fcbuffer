@@ -28,13 +28,15 @@ module.exports = (definitions, config = {}) => {
 
   if(config.customTypes) {
     definitions = Object.assign({}, definitions) //clone
-    for(const key in config.customTypes) { // custom types overwrite definations
+    for(const key in config.customTypes) { // custom types overwrite definitions
       delete definitions[key]
     }
   }
 
   const types = Types(config)
   const {errors, structs} = create(definitions, types)
+
+  // /** Extend with more JSON type definitions (like: base.json). */
   // const extend = (parent, child) => {
   //   const combined = Object.assign(parent, child)
   //   const {structs, errors} = create(combined, types)
@@ -44,6 +46,7 @@ module.exports = (definitions, config = {}) => {
   //     extend: child => extend(combined, child)
   //   }
   // }
+
   return {
     errors,
     structs,
