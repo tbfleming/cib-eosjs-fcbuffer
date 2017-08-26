@@ -94,7 +94,7 @@ AccountPermission.toObject()
 # References
 
 - Built-in Types: [types.js](./src/types.js)
-- EOS Definitions: [generated.json](https://github.com/eosjs/json/blob/master/schema/generated.json)
+- EOS Definitions: [generated.json](https://github.com/EOSIO/eosjs-json/blob/master/schema/generated.json)
 
 # Environment
 
