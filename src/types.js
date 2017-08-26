@@ -39,19 +39,24 @@ const types = {
 */
 module.exports = config => {
   config = Object.assign({defaults: false, debug: false, customTypes: {}}, config)
-  const allTypes = Object.assign(types, config.customTypes)
 
-  const createTypeReducer = (map, name) => {
+  const allTypes = Object.assign({}, types, config.customTypes)
+
+  const createTypeReducer = baseTypes => (map, name) => {
     map[name] = (...args) => {
-      const type = createType(name, config, ...args)
+      const type = createType(name, config, args, baseTypes, allTypes)
       return type
     }
     return map
   }
-  const typeMap = Object.keys(allTypes).reduce(createTypeReducer, {})
 
-  typeMap.config = config
-  return typeMap
+  const baseTypes = Object.keys(types)
+    .reduce(createTypeReducer(), {})
+
+  const customTypes = Object.keys(config.customTypes || {})
+    .reduce(createTypeReducer(baseTypes), {})
+
+  return Object.assign({}, baseTypes, customTypes, {config})
 }
 
 
@@ -59,13 +64,13 @@ module.exports = config => {
     @args {string} typeName - matches types[]
     @args {string} config - Additional arguments for types
 */
-function createType (typeName, config, ...args) {
-  const Type = types[typeName]
+function createType (typeName, config, args, baseTypes, allTypes) {
+  const Type = baseTypes ? allTypes[typeName] : types[typeName]
   const [fn, v = {}] = Type(...args)
   const validation = Object.assign(v, config)
   validation.typeName = typeName
   // if(typeName === 'Vector') console.log('typeName', validation)
-  const type = fn(validation)
+  const type = fn(validation, baseTypes)
   return type
 }
 
