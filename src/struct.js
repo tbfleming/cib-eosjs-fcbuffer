@@ -96,10 +96,21 @@ module.exports = (name, config = {debug: false}) => {
     },
 
     fromObject (serializedObject) {
+      const fromObject_struct = config.override[`${name}.fromObject`]
+      if(fromObject_struct) {
+        const ret = fromObject_struct(serializedObject)
+        if(ret != null) {
+          return ret
+        }
+      }
+
       let result = {}
       let field = null
       try {
         for (field in fields) {
+          if(config.debug) {
+            console.error(name, field)
+          }
           const type = fields[field]
           if (field === '') {
             // structPtr
@@ -148,7 +159,6 @@ module.exports = (name, config = {debug: false}) => {
 
           if (config.debug) {
             try {
-
               let b = new ByteBuffer(ByteBuffer.DEFAULT_CAPACITY, ByteBuffer.LITTLE_ENDIAN)
               if (serializedObject != null) {
                 const value = serializedObject[field]
