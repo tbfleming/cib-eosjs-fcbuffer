@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/EOSIO/eosjs-fcbuffer.svg?branch=master)](https://travis-ci.org/EOSIO/eosjs-fcbuffer)
 [![Coverage Status](https://coveralls.io/repos/github/EOSIO/eosjs-fcbuffer/badge.svg?branch=master)](https://coveralls.io/github/EOSIO/eosjs-fcbuffer?branch=master)
+[![NPM](https://img.shields.io/npm/v/fcbuffer.svg)](https://www.npmjs.org/package/fcbuffer)
 
 # FC Buffer
 
