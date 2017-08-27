@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/jcalfee/fcbuffer.svg?branch=master)](https://travis-ci.org/jcalfee/fcbuffer)
-[![Coverage Status](https://coveralls.io/repos/github/jcalfee/fcbuffer/badge.svg?branch=master)](https://coveralls.io/github/jcalfee/fcbuffer?branch=master)
+[![Build Status](https://travis-ci.org/EOSIO/eosjs-fcbuffer.svg?branch=master)](https://travis-ci.org/EOSIO/eosjs-fcbuffer)
+[![Coverage Status](https://coveralls.io/repos/github/EOSIO/eosjs-fcbuffer/badge.svg?branch=master)](https://coveralls.io/github/EOSIO/eosjs-fcbuffer?branch=master)
 
 # FC Buffer
 
