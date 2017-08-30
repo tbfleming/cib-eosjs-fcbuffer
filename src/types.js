@@ -4,7 +4,7 @@ const {Long} = require('bytebuffer')
 const types = {
   Bytes: () => [bytebuf],
   String: () => [string],
-  Vector: type => [vector, {type}],
+  Vector: (type, sorted) => [vector, {type, sorted}],
   Optional: type => [optional, {type}],
   Time: () => [time],
 
@@ -74,52 +74,54 @@ function createType (typeName, config, args, baseTypes, allTypes) {
   return type
 }
 
-const isSerializer = type =>
-    typeof type === 'object' &&
-    typeof type.fromByteBuffer === 'function' &&
-    typeof type.appendByteBuffer === 'function' &&
-    typeof type.fromObject === 'function' &&
-    typeof type.toObject === 'function'
-
 const vector = validation => {
-  if (!isSerializer(validation.type)) { throw new TypeError('Vector type should be a serializer') }
-
+  const {type, sorted} = validation
+  if (!isSerializer(type)) { throw new TypeError('Vector type should be a serializer') }
+  
   return {
     fromByteBuffer (b) {
       const size = b.readVarint32()
-            // if (validation.debug) {
-            //     console.log("constint32 size = " + size.toString(16))
-            // }
+      // if (validation.debug) {
+      //   console.log("constint32 size = " + size.toString(16))
+      // }
       const result = []
       for (let i = 0; i < size; i++) {
-        result.push(validation.type.fromByteBuffer(b))
+        result.push(type.fromByteBuffer(b))
       }
       return result
     },
     appendByteBuffer (b, value) {
       validate(value, validation)
       b.writeVarint32(value.length)
+      if(sorted) {
+        value = sort(type, Object.assign([], value))
+      }
       for (const o of value) {
-        validation.type.appendByteBuffer(b, o)
+        type.appendByteBuffer(b, o)
       }
     },
     fromObject (value) {
       validate(value, validation)
       const result = []
+      if(sorted) {
+        value = sort(type, Object.assign([], value))
+      }
       for (const o of value) {
-        result.push(validation.type.fromObject(o))
+        result.push(type.fromObject(o))
       }
       return result
     },
     toObject (value) {
       if (validation.defaults && value == null) {
-        return [validation.type.toObject(value)]
+        return [type.toObject(value)]
       }
       validate(value, validation)
-
       const result = []
+      if(sorted) {
+        value = sort(type, Object.assign([], value))
+      }
       for (const o of value) {
-        result.push(validation.type.toObject(o))
+        result.push(type.toObject(o))
       }
       return result
     }
@@ -349,6 +351,53 @@ function noOverflow (value, validation) {
             `max ${max.toString()}, min ${min.toString()}, signed ${signed}, bits ${bits}`)
   }
 }
+
+/**
+  Sort by the first element in a definition. Deterministic ordering is very important.
+*/
+const compare = values => {
+  const firstKey = Object.keys(values)[0]
+  const firstType = values[firstKey]
+  return (a, b) => {
+    const valA = a[firstKey]
+    const valB = b[firstKey]
+
+    if (firstType.compare) {
+      return firstType.compare(valA, valB)
+    }
+
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      return valA - valB
+    }
+
+    let encoding
+    if (Buffer.isBuffer(valA) && Buffer.isBuffer(valB)) {
+      // A binary string compare does not work.  If localeCompare is well
+      // supported that could replace HEX.  Performanance is very good so
+      // comparing HEX is used for now.
+      encoding = 'hex'
+    }
+    const strA = toString(valA, encoding)
+    const strB = toString(valB, encoding)
+    return strA > strB ? 1 : strA < strB ? -1 : 0
+  }
+}
+
+const isSerializer = type =>
+  typeof type === 'object' &&
+  typeof type.fromByteBuffer === 'function' &&
+  typeof type.appendByteBuffer === 'function' &&
+  typeof type.fromObject === 'function' &&
+  typeof type.toObject === 'function'
+
+const toString = (value, encoding) =>
+  value == null ? value :
+  value.toString ? value.toString(encoding) :
+  value
+
+const sort = (type, values) =>
+  type.compare ? values.sort(type.compare(values)) :
+  values.sort(compare(values))
 
 const spread = (...args) => Object.assign(...args)
 const isEmpty = value => value == null

@@ -139,7 +139,7 @@ module.exports = (name, config = {debug: false}) => {
       let result = {}
       let field = null
       try {
-        if (!fields) { return result }
+        // if (!fields) { return result }
 
         for (field in fields) {
           const type = fields[field]
@@ -164,7 +164,7 @@ module.exports = (name, config = {debug: false}) => {
                 const value = serializedObject[field]
                 if (value) {
                   const appendByteBuffer = config.override[`${name}.${field}.appendByteBuffer`]
-                  if(toObject && appendByteBuffer) { // FIXME
+                  if(toObject && appendByteBuffer) {
                     appendByteBuffer({fields, serializedObject, b})
                   } else {
                     type.appendByteBuffer(b, value)
@@ -183,38 +183,6 @@ module.exports = (name, config = {debug: false}) => {
         throw error
       }
       return result
-    },
-
-    /**
-      Sort by the first element in a definition. Deterministic ordering is very important.
-    */
-    compare (a, b) {
-      const firstKey = Object.keys(fields)[0]
-      const firstType = fields[firstKey]
-
-      const valA = a[firstKey]
-      const valB = b[firstKey]
-
-      if (firstType.compare) { return firstType.compare(valA, valB) }
-
-      if (typeof valA === 'number' && typeof valB === 'number') { return valA - valB }
-
-      let encoding
-      if (Buffer.isBuffer(valA) && Buffer.isBuffer(valB)) {
-        // A binary string compare does not work.  If localeCompare is well
-        // supported that could replace HEX.  Performanance is very good so
-        // comparing HEX is used for now.
-        encoding = 'hex'
-      }
-
-      const strA = toString(valA, encoding)
-      const strB = toString(valB, encoding)
-      return strA > strB ? 1 : strA < strB ? -1 : 0
     }
   }
 }
-
-const toString = (value, encoding) =>
-  value == null ? null
-  : value.toString ? value.toString(encoding)
-  : value
