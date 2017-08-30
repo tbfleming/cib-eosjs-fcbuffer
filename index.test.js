@@ -321,7 +321,7 @@ describe('Custom Type', function () {
       }
     }
 
-    const {structs, errors} = create(definitions, Types({customTypes}))
+    const {structs, errors} = Fcbuffer(definitions, {customTypes})
     assert.equal(errors.length, 0)
     const asset = structs.Asset.fromObject({amount: '1', symbol: 'EOS'})
     assert.deepEqual(asset, {amount: '1.0000', symbol: 'EOS'})
