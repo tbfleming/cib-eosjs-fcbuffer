@@ -81,9 +81,9 @@ const vector = validation => {
   return {
     fromByteBuffer (b) {
       const size = b.readVarint32()
-      // if (validation.debug) {
-      //   console.log("constint32 size = " + size.toString(16))
-      // }
+      if (validation.debug) {
+        console.log('0x' + size.toString(16), '(Vector.fromByteBuffer length)')
+      }
       const result = []
       for (let i = 0; i < size; i++) {
         result.push(type.fromByteBuffer(b))
@@ -93,6 +93,9 @@ const vector = validation => {
     appendByteBuffer (b, value) {
       validate(value, validation)
       b.writeVarint32(value.length)
+      if (validation.debug) {
+        console.log('0x' + value.length.toString(16), '(Vector.appendByteBuffer length)')
+      }
       if(sorted) {
         value = sort(type, Object.assign([], value))
       }
@@ -176,12 +179,12 @@ const intbuf = (validation) => ({
     return Long.isLong(value) ? value.toString() : value
   },
   appendByteBuffer (b, value) {
-    // noOverflow(value, validation)
+    // validateInt(value, validation)
     // value = typeof value === 'string' ? Long.fromString(value) : value
     b[`write${intbufType(validation)}`](value)
   },
   fromObject (value) {
-    noOverflow(value, validation)
+    validateInt(value, validation)
     // if(validation.bits > 53 && typeof value === 'number')
     //     value = String(value)
 
@@ -192,7 +195,7 @@ const intbuf = (validation) => ({
       return validation.bits > 53 ? '0' : 0
     }
 
-    noOverflow(value, validation)
+    validateInt(value, validation)
     // if(validation.bits > 53 && typeof value === 'number')
     //     value = String(value)
 
@@ -304,7 +307,7 @@ const time = (validation) => {
       // if(value.getTime)
       //     return value.toISOString().split('.')[0] + 'Z'
 
-      noOverflow(value, spread(validation, {bits: 32}))
+      validateInt(value, spread(validation, {bits: 32}))
       const int = parseInt(value)
       return (new Date(int * 1000)).toISOString().split('.')[0]
     }
@@ -335,15 +338,23 @@ const validate = (value, validation) => {
 const ZERO = new BN()
 const ONE = new BN('1')
 
-function noOverflow (value, validation) {
+function validateInt (value, validation) {
   if (isEmpty(value)) {
     throw new Error(`Required ${validation.typeName}`)
   }
   const {signed = false, bits = 54} = validation
 
+  value = String(value).trim()
+  if(
+    (signed && !/^-?[0-9]+$/.test(value)) ||
+    (!signed && !/^[0-9]+$/.test(value))
+  ) {
+    throw new Error(`Number format ${validation.typeName} ${value}`)
+  }
+
   const max = signed ? maxSigned(bits) : maxUnsigned(bits)
   const min = signed ? minSigned(bits) : ZERO
-  const i = new BN(String(value))
+  const i = new BN(value)
 
   // console.log('i.toString(), min.toString()', i.toString(), min.toString())
   if (i.cmp(min) < 0 || i.cmp(max) > 0) {

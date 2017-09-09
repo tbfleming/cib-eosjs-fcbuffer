@@ -74,7 +74,7 @@ describe('API', function () {
 
     assertSerializer(type, '1970-01-01T00:00:00')
     assertSerializer(type, '2106-02-07T06:28:15')
-    throws(() => assertSerializer(type, '1969-12-31T23:59:59Z'), /Overflow/)
+    throws(() => assertSerializer(type, '1969-12-31T23:59:59Z'), /format/) // becomes -1
     throws(() => assertSerializer(type, '2106-02-07T06:28:16Z'), /Overflow/)
     assertRequired(type)
   })
@@ -94,7 +94,7 @@ describe('API', function () {
     assertSerializer(type, 0)
     assertSerializer(type, 255)
     throws(() => assertSerializer(type, 256), /Overflow/)
-    throws(() => assertSerializer(type, -1), /Overflow/)
+    throws(() => assertSerializer(type, -1), /format/)
     assertRequired(type)
   })
 
@@ -105,7 +105,7 @@ describe('API', function () {
     assertSerializer(type, '18446744073709551615')
     assertSerializer(type, '0')
     throws(() => assertSerializer(type, '18446744073709551616'), /Overflow/)
-    throws(() => assertSerializer(type, '-1'), /Overflow/)
+    throws(() => assertSerializer(type, '-1'), /format/)
     assertRequired(type)
   })
 
