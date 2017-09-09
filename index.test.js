@@ -268,13 +268,13 @@ describe('Override', function () {
         b.writeVarint32(b2.offset)
         b.append(b2.copy(0, b2.offset), 'binary')
       },
-      'Message.data.fromObject': ({fields, serializedObject, result}) => {
-        const {data, type} = serializedObject
+      'Message.data.fromObject': ({fields, object, result}) => {
+        const {data, type} = object
         const ser = (type || '') == '' ? fields.data : structs[type]
         result.data = ser.fromObject(data)
       },
-      'Message.data.toObject': ({fields, serializedObject, result, config}) => {
-        const {data, type} = serializedObject || {}
+      'Message.data.toObject': ({fields, object, result, config}) => {
+        const {data, type} = object || {}
         const ser = (type || '') == '' ? fields.data : structs[type]
         result.data = ser.toObject(data, config)
       }
