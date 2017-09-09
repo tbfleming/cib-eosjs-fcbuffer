@@ -27,22 +27,7 @@ module.exports = (name, config = {debug: false}) => {
         for (field in fields) {
           const type = fields[field]
           try {
-            if (config.debug) {
-              if (type.struct) {
-                console.error(type.struct)
-              } else {
-                const o1 = b.offset
-                type.fromByteBuffer(b, config)
-                const o2 = b.offset
-                b.offset = o1
-                // b.reset()
-                const _b = b.copy(o1, o2)
-                console.error(
-                  `${name}.${field}\t`,
-                  _b.toHex()
-                )
-              }
-            }
+            const o1 = b.offset
             if (field === '') {
               // structPtr
               object = type.fromByteBuffer(b, config)
@@ -52,6 +37,18 @@ module.exports = (name, config = {debug: false}) => {
                 fromByteBuffer({fields, object, b, config})
               } else {
                 object[field] = type.fromByteBuffer(b, config)
+              }
+            }
+            if (config.debug) {
+              if (type.struct) {
+                console.error(type.struct)
+              } else {
+                const _b = b.copy(o1, b.offset)
+                console.error(
+                  `${name}.${field}\t`,
+                  _b.toHex(),
+                  '(fromByteBuffer)'
+                )
               }
             }
           } catch (e) {
@@ -108,9 +105,9 @@ module.exports = (name, config = {debug: false}) => {
       let field = null
       try {
         for (field in fields) {
-          if(config.debug) {
-            console.error(name, field)
-          }
+          // if(config.debug) {
+          //   console.error(name, field, '(fromObject)')
+          // }
           const type = fields[field]
           if (field === '') {
             // structPtr
@@ -119,7 +116,7 @@ module.exports = (name, config = {debug: false}) => {
           } else {
             const fromObject = config.override[`${name}.${field}.fromObject`]
             if(fromObject) {
-              fromObject({fields, serializedObject, result})
+              fromObject({fields, object: serializedObject, result})
             } else {
               const value = serializedObject[field]
               const object = type.fromObject(value)
@@ -146,7 +143,7 @@ module.exports = (name, config = {debug: false}) => {
 
           const toObject = config.override[`${name}.${field}.toObject`]
           if(toObject) {
-            toObject({fields, serializedObject, result, config})
+            toObject({fields, object: serializedObject, result, config})
           } else {
             const object = type.toObject(serializedObject ? serializedObject[field] : null, config)
             if (field === '') {
@@ -165,16 +162,17 @@ module.exports = (name, config = {debug: false}) => {
                 if (value) {
                   const appendByteBuffer = config.override[`${name}.${field}.appendByteBuffer`]
                   if(toObject && appendByteBuffer) {
-                    appendByteBuffer({fields, serializedObject, b})
+                    appendByteBuffer({fields, object: serializedObject, b})
                   } else {
                     type.appendByteBuffer(b, value)
                   }
                 }
               }
               b = b.copy(0, b.offset)
-              console.error(name + '.' + field, b.toHex())
+              console.error(name + '.' + field, b.toHex(), '(toObject)')
             } catch(error) { // work-around to prevent debug time crash
-              console.error('DEBUG', name + '.' + field, error.toString())
+              error.message = `${name}.${field} ${error.message}`
+              console.error(error)
             }
           }
         }
