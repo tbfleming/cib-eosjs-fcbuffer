@@ -7,6 +7,7 @@ const types = {
   Vector: (type, sorted) => [vector, {type, sorted}],
   Optional: type => [optional, {type}],
   Time: () => [time],
+  Map: (annotation) => [map, {annotation}],
 
   FixedString16: () => [string, {maxLen: 16}],
   FixedString32: () => [string, {maxLen: 32}],
@@ -74,6 +75,67 @@ function createType (typeName, config, args, baseTypes, allTypes) {
   return type
 }
 
+const map = validation => {
+  const {annotation: [type1, type2]} = validation
+  if (!isSerializer(type1)) { throw new TypeError(`Map<type1, > unknown`) }
+  if (!isSerializer(type2)) { throw new TypeError(`Map<, type2> unknown`) }
+  
+  return {
+    fromByteBuffer (b) {
+      const size = b.readVarint32()
+      const result = {}
+      for (let i = 0; i < size; i++) {
+        result[type1.fromByteBuffer(b)] = type2.fromByteBuffer(b)
+      }
+      if (validation.debug) {
+        console.log('0x' + size.toString(16), '(Map.fromByteBuffer length)', result)
+      }
+      return result
+    },
+    appendByteBuffer (b, value) {
+      validate(value, validation)
+      const keys = Object.keys(value)
+      b.writeVarint32(keys.length)
+      if (validation.debug) {
+        console.log('0x' + keys.length.toString(16), '(Map.appendByteBuffer length)', keys)
+      }
+      // if(sorted) {
+      //   value = sortKeys(type1, Object.assign({}, value))
+      // }
+      for (const o of keys) {
+        const value2 = value[o]
+        type1.appendByteBuffer(b, o)
+        type2.appendByteBuffer(b, value2)
+      }
+    },
+    fromObject (value) {
+      validate(value, validation)
+      const result = {}
+      // if(sorted) {
+      //   value = sortKeys(type1, Object.assign({}, value))
+      // }
+      for (const o in value) {
+        result[type1.fromObject(o)] = type2.fromObject(value[o])
+      }
+      return result
+    },
+    toObject (value) {
+      if (validation.defaults && value == null) {
+        return {[type1.toObject(null)]: type2.toObject(null)}
+      }
+      validate(value, validation)
+      const result = {}
+      // if(sorted) {
+      //   value = sortKey(type1, Object.assign({}, value))
+      // }
+      for (const o in value) {
+        result[type1.toObject(o)] = type2.toObject(value[o])
+      }
+      return result
+    }
+  }
+}
+
 const vector = validation => {
   const {type, sorted} = validation
   if (!isSerializer(type)) { throw new TypeError('Vector type should be a serializer') }
@@ -93,11 +155,11 @@ const vector = validation => {
     appendByteBuffer (b, value) {
       validate(value, validation)
       b.writeVarint32(value.length)
-      if (validation.debug) {
-        console.log('0x' + value.length.toString(16), '(Vector.appendByteBuffer length)')
-      }
       if(sorted) {
         value = sort(type, Object.assign([], value))
+      }
+      if (validation.debug) {
+        console.log('0x' + value.length.toString(16), '(Vector.appendByteBuffer length)', value)
       }
       for (const o of value) {
         type.appendByteBuffer(b, o)

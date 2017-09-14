@@ -88,9 +88,26 @@ function create (definitions, types, config = types.config) {
   function getTypeOrStruct (Type, typeArgs) {
     const typeatty = parseType(Type)
     if (!typeatty) return null
-    const {name, arrayType, optional} = typeatty
+    const {name, annotation, arrayType, optional} = typeatty
     let ret
-    if (arrayType == null) {
+    if(annotation) {
+      // AnyType<FieldName, TypeName>
+      const type = types[name]
+      if(type == null) {
+        errors.push(`Missing ${name} in ${Type}`)
+        return null
+      }
+      const annTypes = []
+      for(let annTypeName of annotation) {
+        const annType = getTypeOrStruct(annTypeName)
+        if(!annType) {
+          errors.push(`Missing ${annTypeName} in ${Type}`)
+          return null
+        }
+        annTypes.push(annType)
+      }
+      ret = type(annTypes)
+    } else if (arrayType == null) {
       // AnyType
       const fieldStruct = structs[name]
       if (fieldStruct) { return fieldStruct }
@@ -154,7 +171,16 @@ const parseType = name => {
 
   name = name.trim()
 
-  const arrayMatch = name.match(/\[(.*)\]/) // supports nested arrays
+  const annotationMatch = name.match(/<(.*)>/)
+  if(annotationMatch) {
+    const annotation = annotationMatch ?
+      annotationMatch[1].replace(/ /g, '').split(',') : null
+
+    name = name.replace(annotationMatch[0], '').trim()
+    return {name, annotation}
+  }
+
+  const arrayMatch = name.match(/\[(.*)\]/)
   const arrayType = arrayMatch ? arrayMatch[1].trim() : null
 
   if (arrayMatch) { name = name.replace(arrayMatch[0], '').trim() }
