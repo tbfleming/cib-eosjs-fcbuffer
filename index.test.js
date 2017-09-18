@@ -57,7 +57,9 @@ describe('API', function () {
     const types = Types()
     for (let typeName of Object.keys(types)) {
       const fn = types[typeName]
-      if (typeof fn === 'function') {
+      if(typeName === 'Map') {
+        fn([types.String(), types.String()])
+      } else if (typeof fn === 'function') {
         fn(types.String())
       }
     }
