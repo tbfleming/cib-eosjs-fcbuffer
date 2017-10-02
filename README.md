@@ -28,7 +28,7 @@ language added.  The definition format may change.
 # Example
 
 ```javascript
-Fcbuffer = require('fcbuffer') // or: Fcbuffer = require('.')
+Fcbuffer = require('fcbuffer') // or: Fcbuffer = require('./src')
 
 assert = require('assert')
 
