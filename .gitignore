@@ -3,3 +3,4 @@ npm-debug.log
 coverage
 test
 mocha/mocha.test.js
+lib
