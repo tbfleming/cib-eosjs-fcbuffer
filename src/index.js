@@ -1,5 +1,5 @@
-const Types = require('./src/types')
-const {create, fromBuffer, toBuffer} = require('./src/fcbuffer')
+const Types = require('./types')
+const {create, fromBuffer, toBuffer} = require('./fcbuffer')
 
 /**
   @typedef {object} SerializerConfig

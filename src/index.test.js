@@ -3,9 +3,9 @@ const assert = require('assert')
 const ByteBuffer = require('bytebuffer')
 
 const Fcbuffer = require('.')
-const Types = require('./src/types')
-const Struct = require('./src/struct')
-const {create} = require('./src/fcbuffer')
+const Types = require('./types')
+const Struct = require('./struct')
+const {create} = require('./fcbuffer')
 
 describe('API', function () {
   it('Bytes', function () {
