@@ -36,22 +36,22 @@ module.exports = (definitions, config = {}) => {
   const types = Types(config)
   const {errors, structs} = create(definitions, types)
 
-  // /** Extend with more JSON type definitions (like: base.json). */
-  // const extend = (parent, child) => {
-  //   const combined = Object.assign(parent, child)
-  //   const {structs, errors} = create(combined, types)
-  //   return {
-  //     errors,
-  //     structs,
-  //     extend: child => extend(combined, child)
-  //   }
-  // }
+  /** Extend with more JSON schema and type definitions */
+  const extend = (parent, child) => {
+    const combined = Object.assign({}, parent, child)
+    const {structs, errors} = create(combined, types)
+    return {
+      errors,
+      structs,
+      extend: child => extend(combined, child)
+    }
+  }
 
   return {
     errors,
     structs,
-    types
-    // extend: child => extend(definitions, child)
+    types,
+    extend: child => extend(definitions, child)
   }
 }
 
