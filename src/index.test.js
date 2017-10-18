@@ -233,13 +233,17 @@ describe('Override', function () {
       'Asset.fromObject': (value) => {
         const [amount, symbol] = value.split(' ')
         return {amount, symbol}
+      },
+      'Asset.toObject': (value) => {
+        const {amount, symbol} = value
+        return `${amount} ${symbol}`
       }
     }
     const {structs, errors} = create(definitions, Types({override}))
     assert.equal(errors.length, 0)
     const asset = structs.Asset.fromObject('1 EOS')
     assert.deepEqual(asset, {amount: 1, symbol: 'EOS'})
-    assert.deepEqual(asset, structs.Asset.toObject(asset))
+    assert.deepEqual('1 EOS', structs.Asset.toObject(asset))
   })
 
   it('field', function () {

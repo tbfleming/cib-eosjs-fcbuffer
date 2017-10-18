@@ -133,6 +133,14 @@ module.exports = (name, config = {debug: false}) => {
     },
 
     toObject (serializedObject = {}) {
+      const toObject_struct = config.override[`${name}.toObject`]
+      if(toObject_struct) {
+        const ret = toObject_struct(serializedObject)
+        if(ret != null) {
+          return ret
+        }
+      }
+
       let result = {}
       let field = null
       try {
