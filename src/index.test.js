@@ -8,46 +8,46 @@ const Struct = require('./struct')
 const {create} = require('./fcbuffer')
 
 describe('API', function () {
-  it('Bytes', function () {
-    const {Bytes} = Types()
-    const type = Bytes()
+  it('bytes', function () {
+    const {bytes} = Types()
+    const type = bytes()
     assertSerializer(type, '00aaeeff')
     assertRequired(type)
   })
 
-  it('String', function () {
-    const {String} = Types()
-    const type = String()
+  it('string', function () {
+    const {string} = Types()
+    const type = string()
     assertSerializer(type, '爱')
     assertRequired(type)
   })
 
-  it('Vector', function () {
-    const {Vector, String} = Types()
-    throws(() => Vector('String'), /Vector type should be a serializer/)
-    const unsortedVector = Vector(String())
+  it('vector', function () {
+    const {vector, string} = Types()
+    throws(() => vector('string'), /vector type should be a serializer/)
+    const unsortedVector = vector(string())
     assertRequired(unsortedVector)
 
     assert.deepEqual(unsortedVector.fromObject(['z', 'z']), ['z', 'z']) // allows duplicates
     assert.deepEqual(unsortedVector.fromObject(['z', 'a']), ['z', 'a']) // does not sort
     assertSerializer(unsortedVector, ['z', 'a'])
 
-    const sortedVector = Vector(String(), true)
+    const sortedVector = vector(string(), true)
     assert.deepEqual(sortedVector.fromObject(['z', 'a']), ['a', 'z']) //sorts
     assertSerializer(sortedVector, ['a', 'z'])
   })
 
   it('FixedBytes', function () {
-    const {FixedBytes16} = Types()
-    const type = FixedBytes16()
+    const {fixed_bytes16} = Types()
+    const type = fixed_bytes16()
     assertSerializer(type, Array(16 + 1).join('ff')) // hex string
-    throws(() => assertSerializer(type, Array(17 + 1).join('ff')), /FixedBytes16 length 17 does not equal 16/)
+    throws(() => assertSerializer(type, Array(17 + 1).join('ff')), /fixed_bytes16 length 17 does not equal 16/)
     assertRequired(type)
   })
 
   it('FixedString', function () {
-    const {FixedString16} = Types()
-    const type = FixedString16()
+    const {fixed_string16} = Types()
+    const type = fixed_string16()
     assertSerializer(type, '1234567890123456')
     throws(() => assertSerializer(type, '12345678901234567'), /exceeds maxLen 16/)
     assertRequired(type)
@@ -57,17 +57,17 @@ describe('API', function () {
     const types = Types()
     for (let typeName of Object.keys(types)) {
       const fn = types[typeName]
-      if(typeName === 'Map') {
-        fn([types.String(), types.String()])
+      if(typeName === 'map') {
+        fn([types.string(), types.string()])
       } else if (typeof fn === 'function') {
-        fn(types.String())
+        fn(types.string())
       }
     }
   })
 
-  it('Time', function () {
-    const {Time} = Types()
-    const type = Time()
+  it('time', function () {
+    const {time} = Types()
+    const type = time()
 
     throws(() => type.fromObject({}), /Unknown date type/)
     type.fromObject(new Date())
@@ -81,18 +81,18 @@ describe('API', function () {
     assertRequired(type)
   })
 
-  it('Optional', function () {
-    const {Optional, String} = Types()
-    const type = Optional(String())
-    throws(() => Optional('String'), /Optional parameter should be a serializer/)
+  it('optional', function () {
+    const {optional, string} = Types()
+    const type = optional(string())
+    throws(() => optional('string'), /optional parameter should be a serializer/)
     assertSerializer(type, 'str')
     assertSerializer(type, null)
     assertSerializer(type, undefined)
   })
 
-  it('UInt', function () {
-    const {UInt8} = Types()
-    const type = UInt8()
+  it('uint', function () {
+    const {uint8} = Types()
+    const type = uint8()
     assertSerializer(type, 0)
     assertSerializer(type, 255)
     throws(() => assertSerializer(type, 256), /Overflow/)
@@ -100,9 +100,9 @@ describe('API', function () {
     assertRequired(type)
   })
 
-  it('UInt64', function () {
-    const {UInt64} = Types()
-    const type = UInt64()
+  it('uint64', function () {
+    const {uint64} = Types()
+    const type = uint64()
 
     assertSerializer(type, '18446744073709551615')
     assertSerializer(type, '0')
@@ -111,9 +111,9 @@ describe('API', function () {
     assertRequired(type)
   })
 
-  it('Int', function () {
-    const {Int8} = Types()
-    const type = Int8()
+  it('int', function () {
+    const {int8} = Types()
+    const type = int8()
     assertSerializer(type, -128)
     assertSerializer(type, 127)
     throws(() => assertSerializer(type, -129), /Overflow/)
@@ -121,9 +121,9 @@ describe('API', function () {
     assertRequired(type)
   })
 
-  it('Int64', function () {
-    const {Int64} = Types()
-    const type = Int64()
+  it('int64', function () {
+    const {int64} = Types()
+    const type = int64()
 
     assertSerializer(type, '9223372036854775807')
     assertSerializer(type, '-9223372036854775808')
@@ -132,14 +132,14 @@ describe('API', function () {
     assertRequired(type)
   })
 
-  it('Struct', function () {
-    const {Vector, UInt16, FixedBytes33} = Types()
+  it('struct', function () {
+    const {vector, uint16, fixed_bytes33} = Types()
 
     const KeyPermissionWeight = Struct('KeyPermissionWeight')
-    KeyPermissionWeight.add('key', FixedBytes33())
-    KeyPermissionWeight.add('weight', UInt16())
+    KeyPermissionWeight.add('key', fixed_bytes33())
+    KeyPermissionWeight.add('weight', uint16())
 
-    const type = Vector(KeyPermissionWeight)
+    const type = vector(KeyPermissionWeight)
     assertSerializer(type, [
       {key: Array(33 + 1).join('00'), weight: 1},
       {key: Array(33 + 1).join('00'), weight: 1}
@@ -149,52 +149,52 @@ describe('API', function () {
 
 describe('JSON', function () {
   it('Structure', function () {
-    assertCompile({Struct: {fields: {checksum: 'FixedBytes32'}}})
+    assertCompile({Struct: {fields: {checksum: 'fixed_bytes32'}}})
     throws(() => assertCompile({Struct: {}}), /Expecting Struct.fields or Struct.base/)
     throws(() => assertCompile({Struct: {base: {obj: 'val'}}}), /Expecting string/)
-    throws(() => assertCompile({Struct: {fields: 'String'}}), /Expecting object/)
+    throws(() => assertCompile({Struct: {fields: 'string'}}), /Expecting object/)
     throws(() => assertCompile({Struct: {fields: {name: {obj: 'val'}}}}), /Expecting string in/)
     throws(() => assertCompile({Struct: 0}), /Expecting object or string/)
   })
 
   it('Debug', function () {
     assertCompile(
-      {Name: 'String', Person: {fields: {name: 'Name'}}},
+      {name: 'string', Person: {fields: {name: 'name'}}},
       {defaults: true, debug: true}
     )
   })
 
   it('typedef', function () {
     throws(() => assertCompile({Type: 'UnknownType'}), /Unrecognized type/)
-    assertCompile({Name: 'String', Person: {fields: {name: 'Name'}}})
-    assertCompile({Name: 'String', MyName: 'Name', Person: {fields: {name: 'MyName'}}})
+    assertCompile({name: 'string', Person: {fields: {name: 'name'}}})
+    assertCompile({name: 'string', MyName: 'name', Person: {fields: {name: 'MyName'}}})
   })
 
   it('typedef', function () {
-    assertCompile({Event: {fields: {time: 'Time'}}})
+    assertCompile({Event: {fields: {time: 'time'}}})
   })
 
   it('Inherit', function () {
-    throws(() => assertCompile({Struct: {fields: {name: 'Name'}}}), /Missing Name/)
-    throws(() => assertCompile({Struct: {base: 'String'}}), /Missing String in Struct.base/)
+    throws(() => assertCompile({Struct: {fields: {name: 'name'}}}), /Missing name/)
+    throws(() => assertCompile({Struct: {base: 'string'}}), /Missing string in Struct.base/)
     throws(() => assertCompile({
-      Person: {base: 'Human', fields: {name: 'String'}}}
+      Person: {base: 'Human', fields: {name: 'string'}}}
     ), /Missing Human/)
 
     throws(() => assertCompile({
-      Human: 'String', // Human needs to be struct not a type
-      Person: {base: 'Human', fields: {name: 'String'}}}
+      Human: 'string', // Human needs to be struct not a type
+      Person: {base: 'Human', fields: {name: 'string'}}}
     ), /Missing Human/)
 
     assertCompile({
-      Boolean: 'UInt8',
+      Boolean: 'uint8',
       Human: {fields: {Alive: 'Boolean'}},
-      Person: {base: 'Human', fields: {name: 'String'}}
+      Person: {base: 'Human', fields: {name: 'string'}}
     })
   })
 
-  it('Optional', function () {
-    const {Person} = assertCompile({Person: {fields: {name: 'String?'}}}, {defaults: false})
+  it('optional', function () {
+    const {Person} = assertCompile({Person: {fields: {name: 'string?'}}}, {defaults: false})
     assertSerializer(Person, {name: 'Jane'})
     assertSerializer(Person, {name: null})
     assertSerializer(Person, {name: undefined})
@@ -202,17 +202,17 @@ describe('JSON', function () {
   })
 
   it('Vectors', function () {
-    throws(() => assertCompile({Person: {fields: {name: 'Vector[TypeArg]'}}}), /Missing TypeArg/)
+    throws(() => assertCompile({Person: {fields: {name: 'vector[TypeArg]'}}}), /Missing TypeArg/)
     throws(() => assertCompile({Person: {fields: {name: 'BaseType[]'}}}), /Missing BaseType/)
-    throws(() => assertCompile({Person: {fields: {name: 'BaseType[String]'}}}), /Missing BaseType/)
-    assertCompile({Person: {fields: {name: 'Vector[String]'}}})
-    assertCompile({Person: {fields: {name: 'String'}}, Conference: {fields: {attendees: 'Person[]'}}})
-    const {Person} = assertCompile({Person: {fields: {friends: 'String[]'}}})
+    throws(() => assertCompile({Person: {fields: {name: 'BaseType[string]'}}}), /Missing BaseType/)
+    assertCompile({Person: {fields: {name: 'vector[string]'}}})
+    assertCompile({Person: {fields: {name: 'string'}}, Conference: {fields: {attendees: 'Person[]'}}})
+    const {Person} = assertCompile({Person: {fields: {friends: 'string[]'}}})
     assertSerializer(Person, {friends: ['Dan', 'Jane']})
   })
 
   it('Errors', function () {
-    const {structs} = create({Struct: {fields: {age: 'String'}}}, Types({defaults: true}))
+    const {structs} = create({Struct: {fields: {age: 'string'}}}, Types({defaults: true}))
     const type = structs.Struct
     throws(() => Fcbuffer.fromBuffer(type, Buffer.from('')), /Illegal offset/)
   })
@@ -222,64 +222,64 @@ describe('Override', function () {
 
   it('type', function () {
     const definitions = {
-      Asset: {
+      asset: {
         fields: {
-          amount: 'String', // another definition (like transfer)
-          symbol: 'String'
+          amount: 'string', // another definition (like transfer)
+          symbol: 'string'
         }
       }
     }
     const override = {
-      'Asset.fromObject': (value) => {
+      'asset.fromObject': (value) => {
         const [amount, symbol] = value.split(' ')
         return {amount, symbol}
       },
-      'Asset.toObject': (value) => {
+      'asset.toObject': (value) => {
         const {amount, symbol} = value
         return `${amount} ${symbol}`
       }
     }
     const {structs, errors} = create(definitions, Types({override}))
     assert.equal(errors.length, 0)
-    const asset = structs.Asset.fromObject('1 EOS')
+    const asset = structs.asset.fromObject('1 EOS')
     assert.deepEqual(asset, {amount: 1, symbol: 'EOS'})
-    assert.deepEqual('1 EOS', structs.Asset.toObject(asset))
+    assert.deepEqual('1 EOS', structs.asset.toObject(asset))
   })
 
   it('field', function () {
     const definitions = {
-      Message: {
+      message: {
         fields: {
-          type: 'String', // another definition (like transfer)
-          data: 'Bytes'
+          type: 'string', // another definition (like transfer)
+          data: 'bytes'
         }
       },
       transfer: {
         fields: {
-          from: 'String',
-          to: 'String'
+          from: 'string',
+          to: 'string'
         }
       }
     }
     const override = {
-      'Message.data.fromByteBuffer': ({fields, object, b, config}) => {
+      'message.data.fromByteBuffer': ({fields, object, b, config}) => {
         const ser = (object.type || '') == '' ? fields.data : structs[object.type]
         b.readVarint32()
         object.data = ser.fromByteBuffer(b, config)
       },
-      'Message.data.appendByteBuffer': ({fields, object, b}) => {
+      'message.data.appendByteBuffer': ({fields, object, b}) => {
         const ser = (object.type || '') == '' ? fields.data : structs[object.type]
         const b2 = new ByteBuffer(ByteBuffer.DEFAULT_CAPACITY, ByteBuffer.LITTLE_ENDIAN)
         ser.appendByteBuffer(b2, object.data)
         b.writeVarint32(b2.offset)
         b.append(b2.copy(0, b2.offset), 'binary')
       },
-      'Message.data.fromObject': ({fields, object, result}) => {
+      'message.data.fromObject': ({fields, object, result}) => {
         const {data, type} = object
         const ser = (type || '') == '' ? fields.data : structs[type]
         result.data = ser.fromObject(data)
       },
-      'Message.data.toObject': ({fields, object, result, config}) => {
+      'message.data.toObject': ({fields, object, result, config}) => {
         const {data, type} = object || {}
         const ser = (type || '') == '' ? fields.data : structs[type]
         result.data = ser.toObject(data, config)
@@ -287,11 +287,11 @@ describe('Override', function () {
     }
     const {structs, errors} = create(definitions, Types({override, debug: true}))
     assert.equal(errors.length, 0)
-    assertSerializer(structs.Message, {
+    assertSerializer(structs.message, {
       type: 'transfer',
       data: {
         from: 'slim',
-        to: 'charles'
+        to: 'luke'
       }
     })
   })
@@ -301,14 +301,14 @@ describe('Custom Type', function () {
   it('Implied Decimal', function () {
     
     const customTypes = {
-      ImpliedDecimal: ()=> [ImpliedDecimal, {decimals: 4}]
+      implied_decimal: ()=> [ImpliedDecimal, {decimals: 4}]
     }
 
     const definitions = {
-      Asset: {
+      asset: {
         fields: {
-          amount: 'ImpliedDecimal',
-          symbol: 'String'
+          amount: 'implied_decimal',
+          symbol: 'string'
         }
       }
     }
@@ -329,7 +329,7 @@ describe('Custom Type', function () {
 
     const {structs, errors} = Fcbuffer(definitions, {customTypes})
     assert.equal(errors.length, 0)
-    const asset = structs.Asset.fromObject({amount: '1', symbol: 'EOS'})
+    const asset = structs.asset.fromObject({amount: '1', symbol: 'EOS'})
     assert.deepEqual(asset, {amount: '1.0000', symbol: 'EOS'})
   })
 })

@@ -6,9 +6,9 @@
 
 Serialization library geared towards immutable data storage such as blockchains.
 
-Project status: Beta. FC Buffer is a recent refactor from serialization code used in
-Bitshares and Steem.  Some of the serialization code was reduced and the definitions
-language added.  The definition format may change.
+FC Buffer is a recent refactor from serialization code used in Bitshares and
+Steem.  Some of the serialization code was reduced and the definitions language
+added.  The definition format may change.
 
 # Features
 
@@ -21,9 +21,9 @@ language added.  The definition format may change.
 
 # Non Features
 
-- Consider Cap'n Proto or Protocol Buffers if your data structures need to be extended
-  at the serialization layer.
-- No streams, usually smaller objects will work
+- Consider Cap'n Proto or Protocol Buffers if your data structures need to
+  be extended at the serialization layer.
+- No streams, smaller blockchain sized objects are used
 
 # Example
 
@@ -32,16 +32,16 @@ Fcbuffer = require('fcbuffer') // or: Fcbuffer = require('./src')
 
 assert = require('assert')
 
-const definitions = {
-    MessageType: 'FixedString16', // CustomType: built-in type
-    AccountName: 'FixedString32', // CustomType: built-in type
-    Message: { // struct
+definitions = {
+    message_type: 'fixed_string16', // CustomType: built-in type
+    account_name: 'fixed_string32', // CustomType: built-in type
+    message: { // struct
         fields: {
-          from: 'AccountName',
-          to: 'AccountName',
-          cc: 'AccountName[]',
-          type: 'MessageType',
-          data: 'Bytes' // built-in type
+          from: 'account_name',
+          to: 'account_name',
+          cc: 'account_name[]',
+          type: 'message_type',
+          data: 'bytes' // built-in type
         }
     }
 }
@@ -53,21 +53,21 @@ fcbuffer = Fcbuffer(definitions, {defaults: true})
 assert(fcbuffer.errors.length === 0, fcbuffer.errors)
 
 // If there are no errors, you'll get your structs
-var {Message} = fcbuffer.structs
+var {message} = fcbuffer.structs
 
 // Create JSON serializable object
 // returns { from: '', to: '', cc: [ '' ], type: '', data: '' }
-Message.toObject()
+message.toObject()
 
 // Convert JSON into a more compact fcbuffer serializable object
-msg = { from: 'jc', to: 'charles', cc: [ 'abc' ], type: '', data: '0f0f0f' }
+msg = { from: 'jc', to: 'dan', cc: [ 'abc' ], type: '', data: '0f0f0f' }
 
 // Serialize fcbuffer object into a single binary buffer
-buf = Fcbuffer.toBuffer(Message, msg)
+buf = Fcbuffer.toBuffer(message, msg)
 // returns <Buffer 02 6a 63 07 63 68 61 72 6c 65 73 01 03 61 62 63 00 03 0f 0f 0f>
 
 // Convert binary back into a new (cloned) object
-obj = Fcbuffer.fromBuffer(Message, buf)
+obj = Fcbuffer.fromBuffer(message, buf)
 
 // Check that the new object matches the original
 assert.deepEqual(msg, obj)
@@ -75,19 +75,19 @@ assert.deepEqual(msg, obj)
 // A definition may extend and define other definitions.  This works in the initial
 // definition or later via the extend function.
 fcbuffer2 = fcbuffer.extend({
-    PermissionName: 'FixedString16',
-    AccountPermission: {
+    permission_name: 'fixed_string16',
+    account_permission: {
         fields: {
-          account: 'AccountName',
-          permission: 'PermissionName'
+          account: 'account_name',
+          permission: 'permission_name'
         }
     }
 })
 
 assert(fcbuffer2.errors.length === 0, fcbuffer2.errors)
 
-var {AccountPermission} = fcbuffer2.structs
-AccountPermission.toObject()
+var {account_permission} = fcbuffer2.structs
+account_permission.toObject()
 // toObject returns: { account: '', permission: '' }
 
 ```

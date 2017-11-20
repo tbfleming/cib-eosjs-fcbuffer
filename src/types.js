@@ -2,33 +2,33 @@ const BN = require('bn.js')
 const {Long} = require('bytebuffer')
 
 const types = {
-  Bytes: () => [bytebuf],
-  String: () => [string],
-  Vector: (type, sorted) => [vector, {type, sorted}],
-  Optional: type => [optional, {type}],
-  Time: () => [time],
-  Map: (annotation) => [map, {annotation}],
+  bytes: () => [bytebuf],
+  string: () => [string],
+  vector: (type, sorted) => [vector, {type, sorted}],
+  optional: type => [optional, {type}],
+  time: () => [time],
+  map: (annotation) => [map, {annotation}],
 
-  FixedString16: () => [string, {maxLen: 16}],
-  FixedString32: () => [string, {maxLen: 32}],
+  fixed_string16: () => [string, {maxLen: 16}],
+  fixed_string32: () => [string, {maxLen: 32}],
 
-  FixedBytes16: () => [bytebuf, {len: 16}],
-  FixedBytes28: () => [bytebuf, {len: 28}],
-  FixedBytes32: () => [bytebuf, {len: 32}],
-  FixedBytes33: () => [bytebuf, {len: 33}],
-  FixedBytes64: () => [bytebuf, {len: 64}],
-  FixedBytes65: () => [bytebuf, {len: 65}],
+  fixed_bytes16: () => [bytebuf, {len: 16}],
+  fixed_bytes28: () => [bytebuf, {len: 28}],
+  fixed_bytes32: () => [bytebuf, {len: 32}],
+  fixed_bytes33: () => [bytebuf, {len: 33}],
+  fixed_bytes64: () => [bytebuf, {len: 64}],
+  fixed_bytes65: () => [bytebuf, {len: 65}],
 
-  UInt8: () => [intbuf, {bits: 8}],
-  UInt16: () => [intbuf, {bits: 16}],
-  UInt32: () => [intbuf, {bits: 32}],
-  UInt64: () => [intbuf, {bits: 64}],
+  uint8: () => [intbuf, {bits: 8}],
+  uint16: () => [intbuf, {bits: 16}],
+  uint32: () => [intbuf, {bits: 32}],
+  uint64: () => [intbuf, {bits: 64}],
   // ,128,224,256,512 TODO
 
-  Int8: () => [intbuf, {signed: true, bits: 8}],
-  Int16: () => [intbuf, {signed: true, bits: 16}],
-  Int32: () => [intbuf, {signed: true, bits: 32}],
-  Int64: () => [intbuf, {signed: true, bits: 64}]
+  int8: () => [intbuf, {signed: true, bits: 8}],
+  int16: () => [intbuf, {signed: true, bits: 16}],
+  int32: () => [intbuf, {signed: true, bits: 32}],
+  int64: () => [intbuf, {signed: true, bits: 64}]
   // ,128,224,256,512 TODO
 
   // VarInt32: ()=> [intbuf, {signed: true, bits: 32}],
@@ -70,15 +70,15 @@ function createType (typeName, config, args, baseTypes, allTypes, customTypes) {
   const [fn, v = {}] = Type(...args)
   const validation = Object.assign(v, config)
   validation.typeName = typeName
-  // if(typeName === 'Vector') console.log('typeName', validation)
+  // if(typeName === 'vector') console.log('typeName', validation)
   const type = fn(validation, baseTypes, customTypes)
   return type
 }
 
 const map = validation => {
   const {annotation: [type1, type2]} = validation
-  if (!isSerializer(type1)) { throw new TypeError(`Map<type1, > unknown`) }
-  if (!isSerializer(type2)) { throw new TypeError(`Map<, type2> unknown`) }
+  if (!isSerializer(type1)) { throw new TypeError(`map<type1, > unknown`) }
+  if (!isSerializer(type2)) { throw new TypeError(`map<, type2> unknown`) }
   
   return {
     fromByteBuffer (b) {
@@ -88,7 +88,7 @@ const map = validation => {
         result[type1.fromByteBuffer(b)] = type2.fromByteBuffer(b)
       }
       if (validation.debug) {
-        console.log('0x' + size.toString(16), '(Map.fromByteBuffer length)', result)
+        console.log('0x' + size.toString(16), '(map.fromByteBuffer length)', result)
       }
       return result
     },
@@ -97,7 +97,7 @@ const map = validation => {
       const keys = Object.keys(value)
       b.writeVarint32(keys.length)
       if (validation.debug) {
-        console.log('0x' + keys.length.toString(16), '(Map.appendByteBuffer length)', keys)
+        console.log('0x' + keys.length.toString(16), '(map.appendByteBuffer length)', keys)
       }
       // if(sorted) {
       //   value = sortKeys(type1, Object.assign({}, value))
@@ -138,13 +138,13 @@ const map = validation => {
 
 const vector = validation => {
   const {type, sorted} = validation
-  if (!isSerializer(type)) { throw new TypeError('Vector type should be a serializer') }
+  if (!isSerializer(type)) { throw new TypeError('vector type should be a serializer') }
   
   return {
     fromByteBuffer (b) {
       const size = b.readVarint32()
       if (validation.debug) {
-        console.log('0x' + size.toString(16), '(Vector.fromByteBuffer length)')
+        console.log('0x' + size.toString(16), '(vector.fromByteBuffer length)')
       }
       const result = []
       for (let i = 0; i < size; i++) {
@@ -159,7 +159,7 @@ const vector = validation => {
         value = sort(type, Object.assign([], value))
       }
       if (validation.debug) {
-        console.log('0x' + value.length.toString(16), '(Vector.appendByteBuffer length)', value)
+        console.log('0x' + value.length.toString(16), '(vector.appendByteBuffer length)', value)
       }
       for (const o of value) {
         type.appendByteBuffer(b, o)
@@ -195,7 +195,7 @@ const vector = validation => {
 
 const optional = validation => {
   const {type} = validation
-  if (!isSerializer(type)) { throw new TypeError('Optional parameter should be a serializer') }
+  if (!isSerializer(type)) { throw new TypeError('optional parameter should be a serializer') }
 
   return {
     fromByteBuffer (b) {

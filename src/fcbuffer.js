@@ -82,16 +82,16 @@ function create (definitions, types, config = types.config) {
     }
   }
 
-  const {Vector, Optional} = types
+  const {vector, optional} = types
 
-  // Create types from a string (ex Vector[Type])
+  // Create types from a string (ex vector[Type])
   function getTypeOrStruct (Type, typeArgs) {
     const typeatty = parseType(Type)
     if (!typeatty) return null
-    const {name, annotation, arrayType, optional} = typeatty
+    const {name, annotation, arrayType} = typeatty
     let ret
     if(annotation) {
-      // AnyType<FieldName, TypeName>
+      // any_type<field_name, type_name>
       const type = types[name]
       if(type == null) {
         errors.push(`Missing ${name} in ${Type}`)
@@ -122,9 +122,9 @@ function create (definitions, types, config = types.config) {
       const nameType = getTypeOrStruct(typeatty.name)
       if (!nameType) { return null }
 
-      ret = Vector(nameType)
+      ret = vector(nameType)
     } else if (arrayType.length > 0) {
-      // Vector[Type]
+      // vector[Type]
       const arrayTs = getTypeOrStruct(typeatty.arrayType)
       if (!arrayTs) {
         errors.push(`Missing ${typeatty.arrayType} in ${Type}`)
@@ -137,7 +137,7 @@ function create (definitions, types, config = types.config) {
       }
       ret = baseTs
     }
-    return optional ? Optional(ret) : ret
+    return typeatty.optional ? optional(ret) : ret
   }
 
   // Add all the fields.  Thanks to structPtr no need to look at base types.
