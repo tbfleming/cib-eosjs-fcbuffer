@@ -233,8 +233,15 @@ describe('JSON', function () {
     throws(() => assertCompile({Person: {fields: {name: 'BaseType[string]'}}}), /Missing BaseType/)
     assertCompile({Person: {fields: {name: 'vector[string]'}}})
     assertCompile({Person: {fields: {name: 'string'}}, Conference: {fields: {attendees: 'Person[]'}}})
-    const {Person} = assertCompile({Person: {fields: {friends: 'string[]'}}})
+
+    let {Person} = assertCompile({Person: {fields: {friends: 'string[]'}}})
     assertSerializer(Person, {friends: ['Dan', 'Jane']})
+
+    Person = assertCompile(
+      {Person: {fields: {friends: 'string[]'}}},
+      {nosort: {'Person.string': true}}
+    ).Person
+    assertSerializer(Person, {friends: ['Jane', 'Dan']})
   })
 
   it('Errors', function () {
