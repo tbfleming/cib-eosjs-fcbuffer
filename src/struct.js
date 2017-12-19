@@ -18,12 +18,12 @@ module.exports = (name, config = {debug: false}) => {
 
   return {
     compare (a, b) {
-      if(!fieldOne || !fieldOne.compare) {
-        return 0
-      }
-
       const v1 = a[fieldOneName]
       const v2 = b[fieldOneName]
+
+      if(!fieldOne || !fieldOne.compare) {
+        return v1 > v2 ? 1 : v1 < v2 ? -1 : 0
+      }
 
       return fieldOne.compare(v1, v2)
     },
