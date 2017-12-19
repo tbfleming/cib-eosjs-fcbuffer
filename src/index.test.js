@@ -25,7 +25,7 @@ describe('API', function () {
   it('vector', function () {
     const {vector, string} = Types()
     throws(() => vector('string'), /vector type should be a serializer/)
-    const unsortedVector = vector(string())
+    const unsortedVector = vector(string(), false)
     assertRequired(unsortedVector)
 
     assert.deepEqual(unsortedVector.fromObject(['z', 'z']), ['z', 'z']) // allows duplicates
@@ -90,14 +90,24 @@ describe('API', function () {
     assertSerializer(type, undefined)
   })
 
-  it('uint', function () {
-    const {uint8} = Types()
+  describe('uint', function () {
+    const {uint8, vector} = Types()
     const type = uint8()
-    assertSerializer(type, 0)
-    assertSerializer(type, 255)
-    throws(() => assertSerializer(type, 256), /Overflow/)
-    throws(() => assertSerializer(type, -1), /format/)
-    assertRequired(type)
+
+    it('serializes', function () {
+      assertSerializer(type, 0)
+      assertSerializer(type, 255)
+      throws(() => assertSerializer(type, 256), /Overflow/)
+      throws(() => assertSerializer(type, -1), /format/)
+      assertRequired(type)
+    })
+
+    it('sorts', function () {
+      const typeVector = vector(type)
+      const unsortedValue = [1, 0]
+      const sortedValue = [0, 1]
+      assertSerializerSort(typeVector, unsortedValue, sortedValue)
+    })
   })
 
   it('uint64', function () {
@@ -132,7 +142,7 @@ describe('API', function () {
     assertRequired(type)
   })
 
-  it('struct', function () {
+  describe('struct', function () {
     const {vector, uint16, fixed_bytes33} = Types()
 
     const KeyPermissionWeight = Struct('KeyPermissionWeight')
@@ -140,10 +150,26 @@ describe('API', function () {
     KeyPermissionWeight.add('weight', uint16())
 
     const type = vector(KeyPermissionWeight)
-    assertSerializer(type, [
-      {key: Array(33 + 1).join('00'), weight: 1},
-      {key: Array(33 + 1).join('00'), weight: 1}
-    ])
+
+    it('serializes', function () {
+      assertSerializer(type, [
+        {key: Array(33 + 1).join('00'), weight: 1},
+        {key: Array(33 + 1).join('00'), weight: 1}
+      ])
+    })
+
+    it('sorts', function () {
+      const unsortedValue = [
+        {key: Array(33 + 1).join('11'), weight: 1},
+        {key: Array(33 + 1).join('00'), weight: 1}
+      ]
+
+      const sortedValue = [
+        unsortedValue[1],
+        unsortedValue[0]
+      ]
+      assertSerializerSort(type, unsortedValue, sortedValue)
+    })
   })
 })
 
@@ -354,6 +380,17 @@ function assertSerializer (type, value) {
   const obj3 = type.toObject(obj) // tests toObject
   deepEqual(value, obj3, 'serialize object')
   deepEqual(obj3, obj2, 'serialize buffer')
+}
+
+function assertSerializerSort(type, unsortedValue, sortedValue) {
+  const obj = type.fromObject(unsortedValue) // tests fromObject
+  const obj2 = type.toObject(obj) // tests toObject
+
+  deepEqual(obj2, sortedValue, 'fromObject sorts')
+
+  const buf = Fcbuffer.toBuffer(type, obj2) // tests appendByteBuffer
+  const obj3 = Fcbuffer.fromBuffer(type, buf) // tests fromByteBuffer
+  deepEqual(obj3, obj3, 'serialize buffer')
 }
 
 function assertRequired (type) {

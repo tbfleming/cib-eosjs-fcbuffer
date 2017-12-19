@@ -4,7 +4,7 @@ const {Long} = require('bytebuffer')
 const types = {
   bytes: () => [bytebuf],
   string: () => [string],
-  vector: (type, sorted) => [vector, {type, sorted}],
+  vector: (type, sorted = true) => [vector, {type, sorted}],
   optional: type => [optional, {type}],
   time: () => [time],
   map: (annotation) => [map, {annotation}],
@@ -99,7 +99,7 @@ const map = validation => {
       if (validation.debug) {
         console.log('0x' + keys.length.toString(16), '(map.appendByteBuffer length)', keys)
       }
-      // if(sorted) {
+      // if(sorted === true) {
       //   value = sortKeys(type1, Object.assign({}, value))
       // }
       for (const o of keys) {
@@ -111,7 +111,7 @@ const map = validation => {
     fromObject (value) {
       validate(value, validation)
       const result = {}
-      // if(sorted) {
+      // if(sorted === true) {
       //   value = sortKeys(type1, Object.assign({}, value))
       // }
       for (const o in value) {
@@ -125,7 +125,7 @@ const map = validation => {
       }
       validate(value, validation)
       const result = {}
-      // if(sorted) {
+      // if(sorted === true) {
       //   value = sortKey(type1, Object.assign({}, value))
       // }
       for (const o in value) {
@@ -138,7 +138,9 @@ const map = validation => {
 
 const vector = validation => {
   const {type, sorted} = validation
-  if (!isSerializer(type)) { throw new TypeError('vector type should be a serializer') }
+  if (!isSerializer(type)) {
+    throw new TypeError('vector type should be a serializer')
+  }
   
   return {
     fromByteBuffer (b) {
@@ -155,7 +157,7 @@ const vector = validation => {
     appendByteBuffer (b, value) {
       validate(value, validation)
       b.writeVarint32(value.length)
-      if(sorted) {
+      if(sorted === true) {
         value = sort(type, Object.assign([], value))
       }
       if (validation.debug) {
@@ -167,12 +169,12 @@ const vector = validation => {
     },
     fromObject (value) {
       validate(value, validation)
-      const result = []
-      if(sorted) {
-        value = sort(type, Object.assign([], value))
-      }
+      let result = []
       for (const o of value) {
         result.push(type.fromObject(o))
+      }
+      if(sorted === true) {
+        result = sort(type, Object.assign([], result))
       }
       return result
     },
@@ -181,10 +183,10 @@ const vector = validation => {
         return [type.toObject(value)]
       }
       validate(value, validation)
-      const result = []
-      if(sorted) {
+      if(sorted === true) {
         value = sort(type, Object.assign([], value))
       }
+      const result = []
       for (const o of value) {
         result.push(type.toObject(o))
       }
@@ -302,6 +304,9 @@ const bytebuf = (validation) => {
       }
       validate(value, validation)
       return value.toString('hex')
+    },
+    compare (a, b) {
+      return Buffer.compare(a, b)
     }
   }
   return _bytebuf
@@ -425,37 +430,6 @@ function validateInt (value, validation) {
   }
 }
 
-/**
-  Sort by the first element in a definition. Deterministic ordering is very important.
-*/
-const compare = values => {
-  const firstKey = Object.keys(values)[0]
-  const firstType = values[firstKey]
-  return (a, b) => {
-    const valA = a[firstKey]
-    const valB = b[firstKey]
-
-    if (firstType.compare) {
-      return firstType.compare(valA, valB)
-    }
-
-    if (typeof valA === 'number' && typeof valB === 'number') {
-      return valA - valB
-    }
-
-    let encoding
-    if (Buffer.isBuffer(valA) && Buffer.isBuffer(valB)) {
-      // A binary string compare does not work.  If localeCompare is well
-      // supported that could replace HEX.  Performanance is very good so
-      // comparing HEX is used for now.
-      encoding = 'hex'
-    }
-    const strA = toString(valA, encoding)
-    const strB = toString(valB, encoding)
-    return strA > strB ? 1 : strA < strB ? -1 : 0
-  }
-}
-
 const isSerializer = type =>
   typeof type === 'object' &&
   typeof type.fromByteBuffer === 'function' &&
@@ -469,8 +443,8 @@ const toString = (value, encoding) =>
   value
 
 const sort = (type, values) =>
-  type.compare ? values.sort(type.compare(values)) :
-  values.sort(compare(values))
+  type.compare ? values.sort(type.compare) : // custom compare
+  values.sort()
 
 const spread = (...args) => Object.assign(...args)
 const isEmpty = value => value == null

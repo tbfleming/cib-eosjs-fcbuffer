@@ -14,10 +14,27 @@ const ByteBuffer = require('bytebuffer')
 module.exports = (name, config = {debug: false}) => {
   config = Object.assign({override: {}}, config)
   const fields = {}
+  let fieldOne, fieldOneName
+
   return {
+    compare (a, b) {
+      if(!fieldOne || !fieldOne.compare) {
+        return 0
+      }
+
+      const v1 = a[fieldOneName]
+      const v2 = b[fieldOneName]
+
+      return fieldOne.compare(v1, v2)
+    },
+
     /** @private */
     add (fieldName, type) {
       fields[fieldName] = type
+      if(fieldOne == null) {
+        fieldOne = type
+        fieldOneName = fieldName
+      }
     },
 
     fromByteBuffer (b) {
