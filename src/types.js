@@ -70,8 +70,8 @@ function createType (typeName, config, args, baseTypes, allTypes, customTypes) {
   const [fn, v = {}] = Type(...args)
   const validation = Object.assign(v, config)
   validation.typeName = typeName
-  // if(typeName === 'vector') console.log('typeName', validation)
   const type = fn(validation, baseTypes, customTypes)
+  type.typeName = typeName
   return type
 }
 

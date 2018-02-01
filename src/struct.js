@@ -37,6 +37,9 @@ module.exports = (name, config = {debug: false}) => {
       }
     },
 
+    // Complete list of fields, after resolving "base" inheritance
+    fields,
+
     fromByteBuffer (b) {
       let object = {}
       let field = null
