@@ -95,8 +95,8 @@ describe('API', function () {
     const type = uint8()
 
     it('serializes', function () {
-      assertSerializer(type, 0)
-      assertSerializer(type, 255)
+      assertSerializer(type, 0, '00')
+      assertSerializer(type, 255, 'ff')
       throws(() => assertSerializer(type, 256), /Overflow/)
       throws(() => assertSerializer(type, -1), /format/)
       assertRequired(type)
@@ -114,9 +114,23 @@ describe('API', function () {
     const {uint64} = Types()
     const type = uint64()
 
-    assertSerializer(type, '18446744073709551615')
-    assertSerializer(type, '0')
+    assertSerializer(type, '18446744073709551615', 'ffffffffffffffff')
+    assertSerializer(type, '0', '0000000000000000')
     throws(() => assertSerializer(type, '18446744073709551616'), /Overflow/)
+    throws(() => assertSerializer(type, '-1'), /format/)
+    assertRequired(type)
+  })
+
+  it('uint128', function () {
+    const {uint128} = Types()
+    const type = uint128()
+
+    assertSerializer(type,
+      '340282366920938463463374607431768211455',// (2^128)-1
+      'ffffffffffffffffffffffffffffffff'
+    )
+    assertSerializer(type, '0', '00000000000000000000000000000000')
+    throws(() => assertSerializer(type, '340282366920938463463374607431768211456'), /Overflow/)
     throws(() => assertSerializer(type, '-1'), /format/)
     assertRequired(type)
   })
@@ -124,8 +138,13 @@ describe('API', function () {
   it('int', function () {
     const {int8} = Types()
     const type = int8()
-    assertSerializer(type, -128)
-    assertSerializer(type, 127)
+
+    assertSerializer(type, -128, '80')
+    assertSerializer(type, 127, '7f')
+
+    const serializerType = typeof assertSerializer(type, 0)
+    assert.equal(serializerType, 'number', 'expecting number type when bits <= 53')
+
     throws(() => assertSerializer(type, -129), /Overflow/)
     throws(() => assertSerializer(type, 128), /Overflow/)
     assertRequired(type)
@@ -135,10 +154,26 @@ describe('API', function () {
     const {int64} = Types()
     const type = int64()
 
-    assertSerializer(type, '9223372036854775807')
-    assertSerializer(type, '-9223372036854775808')
+    assertSerializer(type, '9223372036854775807', 'ffffffffffffff7f')
+    assertSerializer(type, '-9223372036854775808', '0000000000000080')
+
+    const serializerType = typeof assertSerializer(type, '0')
+    assert.equal(serializerType, 'string', 'expecting string type when bits > 53')
+
     throws(() => assertSerializer(type, '9223372036854775808'), /Overflow/)
     throws(() => assertSerializer(type, '-9223372036854775809'), /Overflow/)
+    assertRequired(type)
+  })
+
+  it('int128', function () {
+    const {int128} = Types()
+    const type = int128()
+
+    assertSerializer(type, '0', '00000000000000000000000000000000')
+    assertSerializer(type, '170141183460469231731687303715884105727', 'ffffffffffffffffffffffffffffff7f')
+    assertSerializer(type, '-170141183460469231731687303715884105728', '00000000000000000000000000000080')
+    throws(() => assertSerializer(type, '170141183460469231731687303715884105728'), /Overflow/)
+    throws(() => assertSerializer(type, '-170141183460469231731687303715884105729'), /Overflow/)
     assertRequired(type)
   })
 
@@ -380,13 +415,17 @@ function assertCompile (definitions, config) {
   return structs
 }
 
-function assertSerializer (type, value) {
+function assertSerializer (type, value, bufferHex) {
   const obj = type.fromObject(value) // tests fromObject
   const buf = Fcbuffer.toBuffer(type, obj) // tests appendByteBuffer
+  if(bufferHex != null) {
+    assert.equal(buf.toString('hex'), bufferHex)
+  }
   const obj2 = Fcbuffer.fromBuffer(type, buf) // tests fromByteBuffer
   const obj3 = type.toObject(obj) // tests toObject
   deepEqual(value, obj3, 'serialize object')
   deepEqual(obj3, obj2, 'serialize buffer')
+  return value
 }
 
 function assertSerializerSort(type, unsortedValue, sortedValue) {

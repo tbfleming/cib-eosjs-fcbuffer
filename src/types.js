@@ -19,19 +19,25 @@ const types = {
   fixed_bytes64: () => [bytebuf, {len: 64}],
   fixed_bytes65: () => [bytebuf, {len: 65}],
 
-  uint8: () => [intbuf, {bits: 8}],
-  uint16: () => [intbuf, {bits: 16}],
-  uint32: () => [intbuf, {bits: 32}],
-  uint64: () => [intbuf, {bits: 64}],
-  // ,128,224,256,512 TODO
+  uint8: () => [bnbuf, {bits: 8}],
+  uint16: () => [bnbuf, {bits: 16}],
+  uint32: () => [bnbuf, {bits: 32}],
+  uint64: () => [bnbuf, {bits: 64}],
+  uint128: () => [bnbuf, {bits: 128}],
+  uint224: () => [bnbuf, {bits: 224}],
+  uint256: () => [bnbuf, {bits: 256}],
+  uint512: () => [bnbuf, {bits: 512}],
 
-  int8: () => [intbuf, {signed: true, bits: 8}],
-  int16: () => [intbuf, {signed: true, bits: 16}],
-  int32: () => [intbuf, {signed: true, bits: 32}],
-  int64: () => [intbuf, {signed: true, bits: 64}]
-  // ,128,224,256,512 TODO
+  int8: () => [bnbuf, {signed: true, bits: 8}],
+  int16: () => [bnbuf, {signed: true, bits: 16}],
+  int32: () => [bnbuf, {signed: true, bits: 32}],
+  int64: () => [bnbuf, {signed: true, bits: 64}],
+  int128: () => [bnbuf, {signed: true, bits: 128}],
+  int224: () => [bnbuf, {signed: true, bits: 224}],
+  int256: () => [bnbuf, {signed: true, bits: 256}],
+  int512: () => [bnbuf, {signed: true, bits: 512}]
 
-  // VarInt32: ()=> [intbuf, {signed: true, bits: 32}],
+  // VarInt32: ()=> [bnbuf, {signed: true, bits: 32}],
 }
 
 /*
@@ -266,6 +272,48 @@ const intbuf = (validation) => ({
     return Long.isLong(value) ? value.toString() : value
   }
 })
+
+/** Big Numbers (> 64 bits) */
+const bnbuf = (validation) => {
+  const {signed = false, bits} = validation
+  const size = bits / 8
+  return {
+    fromByteBuffer (b) {
+      const bcopy = b.copy(b.offset, b.offset + size)
+      b.skip(size)
+
+      let bn = new BN(bcopy.toBuffer())
+      let buf = bn.toArrayLike(Buffer, 'le', size)
+      bn = new BN(buf)
+      if(signed) {
+        bn = bn.fromTwos(bits)
+      }
+      const value = bn.toString()
+      validateInt(value, validation)
+      return bits > 53 ? value : bn.toNumber()
+    },
+    appendByteBuffer (b, value) {
+      validateInt(value, validation)
+      let bn = new BN(value)
+      if(signed) {
+        bn = bn.toTwos(bits)
+      }
+      const buf = bn.toArrayLike(Buffer, 'le', size)
+      b.append(buf.toString('binary'), 'binary')
+    },
+    fromObject (value) {
+      validateInt(value, validation)
+      return value
+    },
+    toObject (value) {
+      if (validation.defaults && value == null) {
+        return validation.bits > 53 ? '0' : 0
+      }
+      validateInt(value, validation)
+      return value
+    }
+  }
+}
 
 const bytebuf = (validation) => {
   const _bytebuf = {
