@@ -247,11 +247,13 @@ describe('JSON', function () {
       Person: {base: 'Human', fields: {name: 'string'}}}
     ), /Missing Human/)
 
-    assertCompile({
+    const schema = assertCompile({
       Boolean: 'uint8',
-      Human: {fields: {Alive: 'Boolean'}},
+      Human: {fields: {Alive: 'Boolean', Gender: 'string'}},
       Person: {base: 'Human', fields: {name: 'string'}}
     })
+    const person = {Alive: 1, Gender: 'f', name: 'jim'}
+    assert.deepEqual(schema.Person.toObject(person), person)
   })
 
   it('optional', function () {

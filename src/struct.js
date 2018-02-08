@@ -132,7 +132,7 @@ module.exports = (name, config = {debug: false}) => {
           if (field === '') {
             // structPtr
             const object = type.fromObject(serializedObject)
-            result = Object.assign(result, object)
+            Object.assign(result, object)
           } else {
             const fromObject = config.override[`${name}.${field}.fromObject`]
             if(fromObject) {
@@ -173,11 +173,12 @@ module.exports = (name, config = {debug: false}) => {
           if(toObject) {
             toObject({fields, object: serializedObject, result, config})
           } else {
-            const object = type.toObject(serializedObject ? serializedObject[field] : null, config)
             if (field === '') {
               // structPtr
-              result = Object.assign(result, object)
+              const object = type.toObject(serializedObject, config)
+              Object.assign(result, object)
             } else {
+              const object = type.toObject(serializedObject ? serializedObject[field] : null, config)
               result[field] = object
             }
           }
