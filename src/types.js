@@ -282,9 +282,9 @@ const bnbuf = (validation) => {
       const bcopy = b.copy(b.offset, b.offset + size)
       b.skip(size)
 
-      let bn = new BN(bcopy.toBuffer())
-      let buf = bn.toArrayLike(Buffer, 'le', size)
-      bn = new BN(buf)
+      let bn = new BN(bcopy.toHex(), 'hex')
+      let buf = bn.toArrayLike(Buffer, 'le', size) // convert to little endian
+      bn = new BN(buf.toString('hex'), 'hex')
       if(signed) {
         bn = bn.fromTwos(bits)
       }
