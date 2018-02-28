@@ -76,9 +76,9 @@ assert.deepEqual(msg, obj)
 // definition or later via the extend function.
 fcbuffer2 = fcbuffer.extend({
     permission_name: 'fixed_string16',
-    account_permission: {
+    permission_level: {
         fields: {
-          account: 'account_name',
+          actor: 'account_name',
           permission: 'permission_name'
         }
     }
@@ -86,9 +86,9 @@ fcbuffer2 = fcbuffer.extend({
 
 assert(fcbuffer2.errors.length === 0, fcbuffer2.errors)
 
-var {account_permission} = fcbuffer2.structs
-account_permission.toObject()
-// toObject returns: { account: '', permission: '' }
+var {permission_level} = fcbuffer2.structs
+permission_level.toObject()
+// toObject returns: { actor: '', permission: '' }
 
 ```
 

@@ -13,6 +13,7 @@ const types = {
   fixed_string32: () => [string, {maxLen: 32}],
 
   fixed_bytes16: () => [bytebuf, {len: 16}],
+  fixed_bytes20: () => [bytebuf, {len: 20}],
   fixed_bytes28: () => [bytebuf, {len: 28}],
   fixed_bytes32: () => [bytebuf, {len: 32}],
   fixed_bytes33: () => [bytebuf, {len: 33}],
