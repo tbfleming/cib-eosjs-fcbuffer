@@ -1,5 +1,7 @@
 const Types = require('./types')
-const {create, fromBuffer, toBuffer} = require('./fcbuffer')
+const Fcbuffer = require('./fcbuffer')
+
+const {create} = Fcbuffer
 
 /**
   @typedef {object} SerializerConfig
@@ -43,7 +45,9 @@ module.exports = (definitions, config = {}) => {
     return {
       errors,
       structs,
-      extend: child => extend(combined, child)
+      extend: child => extend(combined, child),
+      fromBuffer: fromBuffer(types, structs),
+      toBuffer: toBuffer(types, structs)
     }
   }
 
@@ -51,9 +55,44 @@ module.exports = (definitions, config = {}) => {
     errors,
     structs,
     types,
-    extend: child => extend(definitions, child)
+    extend: child => extend(definitions, child),
+
+    /**
+      @arg {string} typeName lookup struct or type by name
+      @arg {Buffer} buf serialized data to be parsed
+      @return {object} deserialized object
+    */
+    fromBuffer: fromBuffer(types, structs),
+
+    /**
+      @arg {string} typeName lookup struct or type by name
+      @arg {Object} object for serialization
+      @return {Buffer} serialized object
+    */
+    toBuffer: toBuffer(types, structs)
   }
 }
 
-module.exports.fromBuffer = fromBuffer
-module.exports.toBuffer = toBuffer
+const fromBuffer = (types, structs) => (typeName, buf) => {
+  assert.equal(typeof typeName, 'string', 'typeName (type or struct name)')
+  if(typeof buf === 'string') {
+    buf = Buffer.from(buf, 'hex')
+  }
+  assert(Buffer.isBuffer(buf), 'expecting buf<hex|Buffer>')
+
+  const type = types[typeName] || structs[typeName]
+  assert(type, 'missing type or struct: ' + typeName)
+  return Fcbuffer.fromBuffer(type, buf)
+}
+
+const toBuffer = (types, structs) => (typeName, object) => {
+  assert.equal(typeof typeName, 'string', 'typeName (type or struct name)')
+  assert.equal(typeof object, 'object', 'object')
+
+  const type = types[typeName] || structs[typeName]
+  assert(type, 'missing type or struct: ' + typeName)
+  return Fcbuffer.toBuffer(type, object)
+}
+
+module.exports.fromBuffer = Fcbuffer.fromBuffer
+module.exports.toBuffer = Fcbuffer.toBuffer
