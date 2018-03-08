@@ -72,14 +72,13 @@ module.exports = (name, config = {debug: false}) => {
               }
             }
           } catch (e) {
-            e.message += ` (${name}.${field})`
-            console.error(`Error reading ${name}.${field} in data:`)
+            console.error(`${e} < ${name}.${field}`)
             b.printDebug()
             throw e
           }
         }
       } catch (error) {
-        error.message += ` ${name}.${field}`
+        error.message += ` < ${name}.${field}`
         throw error
       }
       return object
