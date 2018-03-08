@@ -1,5 +1,6 @@
 const BN = require('bn.js')
 const {Long} = require('bytebuffer')
+const assert = require('assert')
 
 const types = {
   bytes: () => [bytebuf],
@@ -8,6 +9,7 @@ const types = {
   optional: type => [optional, {type}],
   time: () => [time],
   map: (annotation) => [map, {annotation}],
+  static_variant: types => [static_variant, {types}],
 
   fixed_string16: () => [string, {maxLen: 16}],
   fixed_string32: () => [string, {maxLen: 32}],
@@ -139,6 +141,53 @@ const map = validation => {
         result[type1.toObject(o)] = type2.toObject(value[o])
       }
       return result
+    }
+  }
+}
+
+const static_variant = validation => {
+  const {types} = validation
+  return {
+    fromByteBuffer (b) {
+      const typePosition = b.readVarint32()
+      const type = types[typePosition]
+      if (validation.debug) {
+        console.error(`static_variant id ${typePosition} (0x${typePosition.toString(16)})`)
+      }
+      assert(type, `Missing type position ${typePosition}`)
+      return [typePosition, type.fromByteBuffer(b)]
+    },
+    appendByteBuffer(b, object) {
+      assert(Array.isArray(object) && object.length === 2, 'Required tuple')
+      const typePosition = object[0]
+      const type = types[typePosition]
+      assert(type, `type ${typePosition}`)
+      b.writeVarint32(typePosition)
+      type.appendByteBuffer(b, object[1])
+    },
+    fromObject(object) {
+      assert(Array.isArray(object) && object.length === 2, 'Required tuple')
+      const typePosition = object[0]
+      const type = types[typePosition]
+      assert(type, `type ${typePosition}`)
+      return [
+        typePosition,
+        type.fromObject(object[1])
+      ]
+    },
+    toObject(object) {
+      assert(Array.isArray(object) && object.length === 2, 'Required tuple')
+      if (validation.defaults && value == null) {
+        return [object[0], types[0].toObject(null, debug)]
+      }
+      assert(Array.isArray(object) && object.length === 2, 'Required tuple')
+      const typePosition = object[0]
+      const type = types[typePosition]
+      assert(type, `type ${typePosition}`)
+      return [
+        typePosition,
+        type.toObject(object[1])
+      ]
     }
   }
 }
