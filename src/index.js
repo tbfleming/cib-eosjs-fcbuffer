@@ -1,5 +1,6 @@
 const Types = require('./types')
 const Fcbuffer = require('./fcbuffer')
+const assert = require('assert')
 
 const {create} = Fcbuffer
 
@@ -80,7 +81,12 @@ const fromBuffer = (types, structs) => (typeName, buf) => {
   }
   assert(Buffer.isBuffer(buf), 'expecting buf<hex|Buffer>')
 
-  const type = types[typeName] || structs[typeName]
+  let type = types[typeName]
+  if(type) {
+    type = type()
+  } else {
+    type = structs[typeName]
+  }
   assert(type, 'missing type or struct: ' + typeName)
   return Fcbuffer.fromBuffer(type, buf)
 }
@@ -89,7 +95,12 @@ const toBuffer = (types, structs) => (typeName, object) => {
   assert.equal(typeof typeName, 'string', 'typeName (type or struct name)')
   assert.equal(typeof object, 'object', 'object')
 
-  const type = types[typeName] || structs[typeName]
+  let type = types[typeName]
+  if(type) {
+    type = type()
+  } else {
+    type = structs[typeName]
+  }
   assert(type, 'missing type or struct: ' + typeName)
   return Fcbuffer.toBuffer(type, object)
 }
