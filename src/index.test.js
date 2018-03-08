@@ -57,10 +57,19 @@ describe('API', function () {
     const types = Types()
     for (let typeName of Object.keys(types)) {
       const fn = types[typeName]
+      let type = null
       if(typeName === 'map') {
-        fn([types.string(), types.string()])
+        type = fn([types.string(), types.string()])
+        assertSerializer(type, {'abc': 'def'})
+      } else if(typeName === 'static_variant') {
+        type = fn([types.string(), types.string()])
+        assertSerializer(type, [0, 'abc'])
       } else if (typeof fn === 'function') {
-        fn(types.string())
+        type = fn(types.string())
+      }
+      if(type === null) {
+        console.error('Skipped type ' + typeName)
+        continue
       }
     }
   })
@@ -397,10 +406,17 @@ describe('Custom Type', function () {
       }
     }
 
-    const {structs, errors} = Fcbuffer(definitions, {customTypes})
+    const {structs, errors, fromBuffer, toBuffer} = Fcbuffer(definitions, {customTypes})
     assert.equal(errors.length, 0)
     const asset = structs.asset.fromObject({amount: '1', symbol: 'EOS'})
     assert.deepEqual(asset, {amount: '1.0000', symbol: 'EOS'})
+
+    const buf = toBuffer('asset', asset)
+    assert.deepEqual(fromBuffer('asset', buf), asset)
+    assert.deepEqual(fromBuffer('asset', buf.toString('hex')), asset)
+
+    // toBuffer and fromBuffer for a simple type
+    // assert.equal(fromBuffer('uint8', toBuffer('uint8', 1)), 1)
   })
 })
 
