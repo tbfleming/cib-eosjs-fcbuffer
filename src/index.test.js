@@ -281,13 +281,15 @@ describe('JSON', function () {
     assertCompile({Person: {fields: {name: 'string'}}, Conference: {fields: {attendees: 'Person[]'}}})
 
     let {Person} = assertCompile({Person: {fields: {friends: 'string[]'}}})
-    assertSerializer(Person, {friends: ['Dan', 'Jane']})
+    assertSerializer(Person, {friends: ['Jane', 'Dan']})
+    assertSerializer(Person, {friends: ['Dan', 'Jane']})// un-sorted
 
     Person = assertCompile(
       {Person: {fields: {friends: 'string[]'}}},
-      {nosort: {'Person.string': true}}
+      {sort: {'Person.friends': true}}
     ).Person
-    assertSerializer(Person, {friends: ['Jane', 'Dan']})
+    assertSerializer(Person, {friends: ['Dan', 'Jane']})
+    assert.throws(() => assertSerializer(Person, {friends: ['Jane', 'Dan']}), /serialize object/)
   })
 
   it('Errors', function () {
