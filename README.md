@@ -6,6 +6,8 @@
 
 Serialization library geared towards immutable data storage such as blockchains.
 
+For EOS compatible implementation use this library from [eosjs](https://github.com/eosio/eosjs) instead.
+
 FC Buffer is a recent refactor from serialization code used in Bitshares and
 Steem.  Some of the serialization code was reduced and the definitions language
 added.  The definition format may change.
