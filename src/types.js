@@ -176,9 +176,8 @@ const static_variant = validation => {
       ]
     },
     toObject(object) {
-      assert(Array.isArray(object) && object.length === 2, 'Required tuple')
-      if (validation.defaults && value == null) {
-        return [object[0], types[0].toObject(null, debug)]
+      if (validation.defaults && object == null) {
+        return [0, types[0].toObject(null, debug)]
       }
       assert(Array.isArray(object) && object.length === 2, 'Required tuple')
       const typePosition = object[0]
