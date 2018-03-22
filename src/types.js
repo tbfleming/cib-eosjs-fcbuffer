@@ -154,7 +154,7 @@ const static_variant = validation => {
       if (validation.debug) {
         console.error(`static_variant id ${typePosition} (0x${typePosition.toString(16)})`)
       }
-      assert(type, `Missing type position ${typePosition}`)
+      assert(type, `static_variant invalid type position ${typePosition}`)
       return [typePosition, type.fromByteBuffer(b)]
     },
     appendByteBuffer(b, object) {

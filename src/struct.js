@@ -72,13 +72,13 @@ module.exports = (name, config = {debug: false}) => {
               }
             }
           } catch (e) {
-            console.error(`${e} < ${name}.${field}`)
+            console.error(`${e} in ${name}.${field}`)
             b.printDebug()
             throw e
           }
         }
       } catch (error) {
-        error.message += ` < ${name}.${field}`
+        error.message += ` in ${name}.${field}`
         throw error
       }
       return object
