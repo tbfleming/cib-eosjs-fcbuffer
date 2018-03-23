@@ -63,11 +63,20 @@ module.exports = (name, config = {debug: false}) => {
               if (type.struct) {
                 console.error(type.struct)
               } else {
+                let object
+                try {
+                  // human readable text
+                  object = type.toObject(object[field], config)
+                } catch(error) {
+                  console.error('debug error:', error)
+                  object = ''
+                }
                 const _b = b.copy(o1, b.offset)
                 console.error(
-                  `${name}.${field}\t`,
-                  _b.toHex(),
-                  '(fromByteBuffer)'
+                  'fromByteBuffer',
+                  `${name}.${field}`,
+                  object,
+                  _b.toHex()
                 )
               }
             }
@@ -197,7 +206,7 @@ module.exports = (name, config = {debug: false}) => {
                 }
               }
               b = b.copy(0, b.offset)
-              console.error(name + '.' + field, b.toHex(), '(toObject)')
+              console.error('toObject', name + '.' + field, result[field], b.toHex())
             } catch(error) { // work-around to prevent debug time crash
               error.message = `${name}.${field} ${error.message}`
               console.error(error)

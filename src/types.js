@@ -201,7 +201,7 @@ const vector = validation => {
     fromByteBuffer (b) {
       const size = b.readVarint32()
       if (validation.debug) {
-        console.log('0x' + size.toString(16), '(vector.fromByteBuffer length)')
+        console.log('fromByteBuffer vector length', size, '(0x' + size.toString(16) + ')')
       }
       const result = []
       for (let i = 0; i < size; i++) {
