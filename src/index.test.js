@@ -420,6 +420,27 @@ describe('Custom Type', function () {
     // toBuffer and fromBuffer for a simple type
     // assert.equal(fromBuffer('uint8', toBuffer('uint8', 1)), 1)
   })
+
+  it('Struct Typedef', function () {
+    const definitions = {
+      name: 'string', // typedef based on a struct
+      names: 'string[]', // typedef based on a struct
+      assets: 'asset[]', // typedef based on a struct
+      asset: {
+        fields: {
+          amount: 'uint64',
+          symbol: 'string'
+        }
+      }
+    }
+
+    const {structs, types, errors} = Fcbuffer(definitions)
+    assert.equal(errors.length, 0, JSON.stringify(errors))
+
+    assertSerializer(types.name(), 'annunaki')
+    assertSerializer(structs.names, ['annunaki'])
+    assertSerializer(structs.assets, [{amount: 1, symbol: 'CUR'}])
+  })
 })
 
 function assertCompile (definitions, config) {

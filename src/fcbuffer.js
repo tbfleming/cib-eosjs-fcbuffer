@@ -46,6 +46,15 @@ function create(definitions, types, config = types.config) {
       continue
     }
   }
+  
+  // Keys with objects are structs
+  const structs = {}
+  for (const key in definitions) {
+    const value = definitions[key]
+    if (typeof value === 'object') {
+      structs[key] = Struct(key, config)
+    }
+  }
 
   // Resolve user-friendly typedef names pointing to a native type (or another typedef)
   for (const key in definitions) {
@@ -55,17 +64,14 @@ function create(definitions, types, config = types.config) {
       if (type) {
         types[key] = type
       } else {
-        errors.push(`Unrecognized type ${key}.${value}`)
+        // example: key === 'fields' && value === field[]
+        const struct = getTypeOrStruct(key, value) // type = vector(field)
+        if(struct) {
+          structs[key] = struct
+        } else {
+          errors.push(`Unrecognized type or struct ${key}.${value}`)
+        }
       }
-    }
-  }
-
-  // Keys with objects are structs
-  const structs = {}
-  for (const key in definitions) {
-    const value = definitions[key]
-    if (typeof value === 'object') {
-      structs[key] = Struct(key, config)
     }
   }
 
@@ -84,8 +90,6 @@ function create(definitions, types, config = types.config) {
       thisStruct.add('', structPtr(baseStruct))
     }
   }
-
-  const {vector, optional} = types
 
   // Create types from a string (ex vector[Type])
   function getTypeOrStruct (key, Type, typeArgs, fieldName) {
@@ -116,7 +120,9 @@ function create(definitions, types, config = types.config) {
       if (fieldStruct) { return fieldStruct }
 
       const type = types[name]
-      if (!type) { return null }
+      if (!type) {
+        return null
+      }
 
       // types need to be instantiated
       ret = type(typeArgs)
@@ -127,7 +133,7 @@ function create(definitions, types, config = types.config) {
 
       const sort = config.sort[`${key}.${fieldName}`] || false
       // console.log('sort?', `${key}.${fieldName}`, sort, config.sort)
-      ret = vector(nameType, sort)
+      ret = types.vector(nameType, sort)
     } else if (arrayType.length > 0) {
       // vector[Type]
       const arrayTs = getTypeOrStruct(key, typeatty.arrayType, null, fieldName)
@@ -142,7 +148,7 @@ function create(definitions, types, config = types.config) {
       }
       ret = baseTs
     }
-    return typeatty.optional ? optional(ret) : ret
+    return typeatty.optional ? types.optional(ret) : ret
   }
 
   // Add all the fields.  Thanks to structPtr no need to look at base types.
