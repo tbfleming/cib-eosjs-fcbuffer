@@ -63,23 +63,31 @@ module.exports = (name, config = {debug: false}) => {
               if (type.struct) {
                 console.error(type.struct)
               } else {
+                let value
+                try {
+                  // human readable text
+                  value = type.toObject(field === '' ? object : object[field], config)
+                } catch(error) {
+                  // console.error('fromByteBuffer debug error:', error)
+                  value = ''
+                }
                 const _b = b.copy(o1, b.offset)
                 console.error(
-                  `${name}.${field}\t`,
-                  _b.toHex(),
-                  '(fromByteBuffer)'
+                  'fromByteBuffer',
+                  `${name}.${field}`,
+                  `'${value}'`,
+                  _b.toHex()
                 )
               }
             }
           } catch (e) {
-            e.message += ` (${name}.${field})`
-            console.error(`Error reading ${name}.${field} in data:`)
+            console.error(`${e} in ${name}.${field}`)
             b.printDebug()
             throw e
           }
         }
       } catch (error) {
-        error.message += ` ${name}.${field}`
+        error.message += ` in ${name}.${field}`
         throw error
       }
       return object
@@ -198,7 +206,7 @@ module.exports = (name, config = {debug: false}) => {
                 }
               }
               b = b.copy(0, b.offset)
-              console.error(name + '.' + field, b.toHex(), '(toObject)')
+              console.error('toObject', name + '.' + field, `'${result[field]}'`, b.toHex())
             } catch(error) { // work-around to prevent debug time crash
               error.message = `${name}.${field} ${error.message}`
               console.error(error)

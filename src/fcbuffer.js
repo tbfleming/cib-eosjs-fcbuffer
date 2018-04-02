@@ -11,10 +11,10 @@ module.exports = {
   @summary Create a serializer for each definition.
   @return {CreateStruct}
 */
-function create (definitions, types, config = types.config) {
+function create(definitions, types, config = types.config) {
   const errors = []
-  if(!config.nosort) {
-    config.nosort = {}
+  if(!config.sort) {
+    config.sort = {}
   }
 
   // Basic structure validation
@@ -46,6 +46,15 @@ function create (definitions, types, config = types.config) {
       continue
     }
   }
+  
+  // Keys with objects are structs
+  const structs = {}
+  for (const key in definitions) {
+    const value = definitions[key]
+    if (typeof value === 'object') {
+      structs[key] = Struct(key, config)
+    }
+  }
 
   // Resolve user-friendly typedef names pointing to a native type (or another typedef)
   for (const key in definitions) {
@@ -55,17 +64,14 @@ function create (definitions, types, config = types.config) {
       if (type) {
         types[key] = type
       } else {
-        errors.push(`Unrecognized type ${key}.${value}`)
+        // example: key === 'fields' && value === field[]
+        const struct = getTypeOrStruct(key, value) // type = vector(field)
+        if(struct) {
+          structs[key] = struct
+        } else {
+          errors.push(`Unrecognized type or struct ${key}.${value}`)
+        }
       }
-    }
-  }
-
-  // Keys with objects are structs
-  const structs = {}
-  for (const key in definitions) {
-    const value = definitions[key]
-    if (typeof value === 'object') {
-      structs[key] = Struct(key, config)
     }
   }
 
@@ -85,10 +91,8 @@ function create (definitions, types, config = types.config) {
     }
   }
 
-  const {vector, optional} = types
-
   // Create types from a string (ex vector[Type])
-  function getTypeOrStruct (key, Type, typeArgs) {
+  function getTypeOrStruct (key, Type, typeArgs, fieldName) {
     const typeatty = parseType(Type)
     if (!typeatty) return null
     const {name, annotation, arrayType} = typeatty
@@ -102,7 +106,7 @@ function create (definitions, types, config = types.config) {
       }
       const annTypes = []
       for(let annTypeName of annotation) {
-        const annType = getTypeOrStruct(key, annTypeName)
+        const annType = getTypeOrStruct(key, annTypeName, null, fieldName)
         if(!annType) {
           errors.push(`Missing ${annTypeName} in ${Type}`)
           return null
@@ -116,33 +120,35 @@ function create (definitions, types, config = types.config) {
       if (fieldStruct) { return fieldStruct }
 
       const type = types[name]
-      if (!type) { return null }
+      if (!type) {
+        return null
+      }
 
       // types need to be instantiated
       ret = type(typeArgs)
     } else if (arrayType === '') {
       // AnyType[]
-      const nameType = getTypeOrStruct(key, typeatty.name)
+      const nameType = getTypeOrStruct(key, typeatty.name, null, fieldName)
       if (!nameType) { return null }
 
-      const nosort = config.nosort[`${key}.${typeatty.name}`]
-      // if(nosort) console.log(`${key}.${typeatty.name}`);
-      ret = vector(nameType, !nosort)
+      const sort = config.sort[`${key}.${fieldName}`] || false
+      // console.log('sort?', `${key}.${fieldName}`, sort, config.sort)
+      ret = types.vector(nameType, sort)
     } else if (arrayType.length > 0) {
       // vector[Type]
-      const arrayTs = getTypeOrStruct(key, typeatty.arrayType)
+      const arrayTs = getTypeOrStruct(key, typeatty.arrayType, null, fieldName)
       if (!arrayTs) {
         errors.push(`Missing ${typeatty.arrayType} in ${Type}`)
         return null
       }
-      const baseTs = getTypeOrStruct(key, typeatty.name, arrayTs)
+      const baseTs = getTypeOrStruct(key, typeatty.name, arrayTs, fieldName)
       if (!baseTs) {
         errors.push(`Missing ${typeatty.name} in ${Type}`)
         return null
       }
       ret = baseTs
     }
-    return typeatty.optional ? optional(ret) : ret
+    return typeatty.optional ? types.optional(ret) : ret
   }
 
   // Add all the fields.  Thanks to structPtr no need to look at base types.
@@ -154,7 +160,7 @@ function create (definitions, types, config = types.config) {
     const {fields} = value
     for (const Field in fields) {
       const Type = fields[Field]
-      const ts = getTypeOrStruct(key, Type)
+      const ts = getTypeOrStruct(key, Type, null, Field)
       if (!ts) {
         errors.push(`Missing ${Type} in ${key}.fields.${Field}`)
         continue

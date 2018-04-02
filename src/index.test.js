@@ -57,10 +57,19 @@ describe('API', function () {
     const types = Types()
     for (let typeName of Object.keys(types)) {
       const fn = types[typeName]
+      let type = null
       if(typeName === 'map') {
-        fn([types.string(), types.string()])
+        type = fn([types.string(), types.string()])
+        assertSerializer(type, {'abc': 'def'})
+      } else if(typeName === 'static_variant') {
+        type = fn([types.string(), types.string()])
+        assertSerializer(type, [0, 'abc'])
       } else if (typeof fn === 'function') {
-        fn(types.string())
+        type = fn(types.string())
+      }
+      if(type === null) {
+        console.error('Skipped type ' + typeName)
+        continue
       }
     }
   })
@@ -210,7 +219,7 @@ describe('API', function () {
 
 describe('JSON', function () {
   it('Structure', function () {
-    assertCompile({Struct: {fields: {checksum: 'fixed_bytes32'}}})
+    assertCompile({Struct: {fields: {checksum32: 'fixed_bytes32'}}})
     throws(() => assertCompile({Struct: {}}), /Expecting Struct.fields or Struct.base/)
     throws(() => assertCompile({Struct: {base: {obj: 'val'}}}), /Expecting string/)
     throws(() => assertCompile({Struct: {fields: 'string'}}), /Expecting object/)
@@ -272,13 +281,15 @@ describe('JSON', function () {
     assertCompile({Person: {fields: {name: 'string'}}, Conference: {fields: {attendees: 'Person[]'}}})
 
     let {Person} = assertCompile({Person: {fields: {friends: 'string[]'}}})
-    assertSerializer(Person, {friends: ['Dan', 'Jane']})
+    assertSerializer(Person, {friends: ['Jane', 'Dan']})
+    assertSerializer(Person, {friends: ['Dan', 'Jane']})// un-sorted
 
     Person = assertCompile(
       {Person: {fields: {friends: 'string[]'}}},
-      {nosort: {'Person.string': true}}
+      {sort: {'Person.friends': true}}
     ).Person
-    assertSerializer(Person, {friends: ['Jane', 'Dan']})
+    assertSerializer(Person, {friends: ['Dan', 'Jane']})
+    assert.throws(() => assertSerializer(Person, {friends: ['Jane', 'Dan']}), /serialize object/)
   })
 
   it('Errors', function () {
@@ -397,10 +408,38 @@ describe('Custom Type', function () {
       }
     }
 
-    const {structs, errors} = Fcbuffer(definitions, {customTypes})
+    const {structs, errors, fromBuffer, toBuffer} = Fcbuffer(definitions, {customTypes})
     assert.equal(errors.length, 0)
     const asset = structs.asset.fromObject({amount: '1', symbol: 'EOS'})
     assert.deepEqual(asset, {amount: '1.0000', symbol: 'EOS'})
+
+    const buf = toBuffer('asset', asset)
+    assert.deepEqual(fromBuffer('asset', buf), asset)
+    assert.deepEqual(fromBuffer('asset', buf.toString('hex')), asset)
+
+    // toBuffer and fromBuffer for a simple type
+    // assert.equal(fromBuffer('uint8', toBuffer('uint8', 1)), 1)
+  })
+
+  it('Struct Typedef', function () {
+    const definitions = {
+      name: 'string', // typedef based on a struct
+      names: 'string[]', // typedef based on a struct
+      assets: 'asset[]', // typedef based on a struct
+      asset: {
+        fields: {
+          amount: 'uint64',
+          symbol: 'string'
+        }
+      }
+    }
+
+    const {structs, types, errors} = Fcbuffer(definitions)
+    assert.equal(errors.length, 0, JSON.stringify(errors))
+
+    assertSerializer(types.name(), 'annunaki')
+    assertSerializer(structs.names, ['annunaki'])
+    assertSerializer(structs.assets, [{amount: 1, symbol: 'CUR'}])
   })
 })
 
