@@ -38,7 +38,9 @@ const types = {
   int128: () => [bnbuf, {signed: true, bits: 128}],
   int224: () => [bnbuf, {signed: true, bits: 224}],
   int256: () => [bnbuf, {signed: true, bits: 256}],
-  int512: () => [bnbuf, {signed: true, bits: 512}]
+  int512: () => [bnbuf, {signed: true, bits: 512}],
+
+  float64: () => [float, {bits: 64}],
 
   // VarInt32: ()=> [bnbuf, {signed: true, bits: 32}],
 }
@@ -359,6 +361,40 @@ const bnbuf = (validation) => {
         return validation.bits > 53 ? '0' : 0
       }
       validateInt(value, validation)
+      return value
+    }
+  }
+}
+
+const floatPoint = require('ieee-float')
+
+const float = (validation) => {
+  const {bits} = validation
+
+  // assert(bits === 32 || bits === 64, 'unsupported float bit size: ' + bits)
+  const sizeName = bits === 32 ? 'Float' : bits === 64 ? 'Double' : null
+  assert(sizeName, 'unsupported float bit size: ' + bits)
+  const size = bits / 8
+
+  return {
+    fromByteBuffer (b) {
+      const bcopy = b.copy(b.offset, b.offset + size)
+      b.skip(size)
+      const fb = Buffer.from(bcopy.toBinary(), 'binary')
+      return floatPoint[`read${sizeName}LE`](fb)
+    },
+    appendByteBuffer (b, value) {
+      const output = []
+      floatPoint[`write${sizeName}LE`](output, value)
+      b.append(output)
+    },
+    fromObject (value) {
+      return value
+    },
+    toObject (value) {
+      if (validation.defaults && value == null) {
+        return 0.0
+      }
       return value
     }
   }

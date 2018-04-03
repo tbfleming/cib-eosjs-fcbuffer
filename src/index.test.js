@@ -54,8 +54,11 @@ describe('API', function () {
   })
 
   it('TypesAll', function () {
-    const types = Types()
+    const types = Types({defaults: true})
     for (let typeName of Object.keys(types)) {
+      if(typeName === 'config') {
+        continue
+      }
       const fn = types[typeName]
       let type = null
       if(typeName === 'map') {
@@ -66,10 +69,10 @@ describe('API', function () {
         assertSerializer(type, [0, 'abc'])
       } else if (typeof fn === 'function') {
         type = fn(types.string())
+        assertSerializer(type, type.toObject())
       }
       if(type === null) {
-        console.error('Skipped type ' + typeName)
-        continue
+        assert(false, 'Skipped type ' + typeName)
       }
     }
   })
