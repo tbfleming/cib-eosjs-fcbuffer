@@ -67,6 +67,13 @@ describe('API', function () {
       } else if(typeName === 'static_variant') {
         type = fn([types.string(), types.string()])
         assertSerializer(type, [0, 'abc'])
+      } else if (typeName === 'object') {
+        type = fn()
+        assert.throws(() => type.fromByteBuffer(), /not serializable/)
+        assert.throws(() => type.appendByteBuffer(), /not serializable/)
+        assert.deepEqual(type.fromObject({a: 1}), {a: 1})
+        assert.deepEqual(type.toObject({a: 1}), {a: 1})
+        assert.deepEqual(type.toObject(), {})
       } else if (typeof fn === 'function') {
         type = fn(types.string())
         assertSerializer(type, type.toObject())

@@ -10,6 +10,7 @@ const types = {
   time: () => [time],
   map: (annotation) => [map, {annotation}],
   static_variant: types => [static_variant, {types}],
+  object: () => [object],
 
   fixed_string16: () => [string, {maxLen: 16}],
   fixed_string32: () => [string, {maxLen: 32}],
@@ -189,6 +190,27 @@ const static_variant = validation => {
         typePosition,
         type.toObject(object[1])
       ]
+    }
+  }
+}
+
+/** non-serializable read-only blockchain data */
+const object = validation => {
+  return {
+    fromByteBuffer (b) {
+      throw new TypeError(`fcbuffer: object type is not serializable`)
+    },
+    appendByteBuffer(b, object) {
+      throw new TypeError(`fcbuffer: object type is not serializable`)
+    },
+    fromObject(object) {
+      return object
+    },
+    toObject(object) {
+      if (validation.defaults && object == null) {
+        return {}
+      }
+      return object
     }
   }
 }
