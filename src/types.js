@@ -31,6 +31,8 @@ const types = {
   uint256: () => [bnbuf, {bits: 256}],
   uint512: () => [bnbuf, {bits: 512}],
 
+  unsigned_int: () => [intbuf, {variable: true, bits: 32}],
+
   int8: () => [intbuf, {signed: true, bits: 8}],
   int16: () => [intbuf, {signed: true, bits: 16}],
   int32: () => [intbuf, {signed: true, bits: 32}],
@@ -290,18 +292,28 @@ const optional = validation => {
   }
 }
 
-const intbufType = ({signed = false, bits}) =>
-    // variable ? `${signed ? 'Varint' : 'Uint'}${bits}` : // Varint32 was used at some point
+const intbufType = ({variable = false, signed = false, bits}) =>
+    variable ? `${'Varint'}${bits}` :
     `${signed ? 'Int' : 'Uint'}${bits}`
 
 const intbuf = (validation) => ({
   fromByteBuffer (b) {
     const value = b[`read${intbufType(validation)}`]()
+    if (validation.variable && !validation.signed)
+      if (validation.bits === 32)
+        return value >>> 0;
+      else
+        throw new Error(intbufType(validation) + ' not implemented')
     return Long.isLong(value) ? value.toString() : value
   },
   appendByteBuffer (b, value) {
     // validateInt(value, validation)
     // value = typeof value === 'string' ? Long.fromString(value) : value
+    if (validation.variable && !validation.signed)
+      if (validation.bits === 32)
+        value = value | 0;
+      else
+        throw new Error(intbufType(validation) + ' not implemented')
     b[`write${intbufType(validation)}`](value)
   },
   fromObject (value) {
