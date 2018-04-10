@@ -434,7 +434,10 @@ const bytebuf = (validation) => {
       if (len == null) {
         b.writeVarint32(value.length)
       }
-      b.append(value.toString('binary'), 'binary')
+      if (global.Buffer && value instanceof global.Buffer)
+        b.append(value.toString('binary'), 'binary')
+      else
+        b.append(value, 'binary')
     },
     fromObject (value) {
       if (typeof value === 'string') { value = Buffer.from(value, 'hex') }
